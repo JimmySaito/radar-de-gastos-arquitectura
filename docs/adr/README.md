@@ -12,5 +12,6 @@
 | [0008](0008-terraform-modular.md) | Terraform con módulos reutilizables | Aceptada | Reusabilidad, Mantenibilidad |
 | [0009](0009-python-lambda-arm64-powertools.md) | Python 3.13 en Lambda arm64 con Powertools | Aceptada | Soportabilidad, Desempeño |
 | [0010](0010-ventana-movil-relectura.md) | Ventana móvil de relectura (*lookback*) | Aceptada | Confiabilidad, Costo |
+| [0011](0011-configuracion-autoservicio.md) | Configuración en autoservicio y separación datos reales / ejemplo | Aceptada | Usabilidad, Seguridad, Modificabilidad |
 
 Plantilla: Contexto → Decisión → Alternativas consideradas → Consecuencias (+/−).

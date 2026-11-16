@@ -13,7 +13,7 @@ El código del prototipo vive en el repositorio [`usage-hub`](../usage-hub).
 | 1 | [Contexto de negocio](docs/01-contexto-negocio.md) | Problema, interesados, *drivers*, alcance del PoC |
 | 2 | [Atributos de calidad](docs/02-atributos-calidad.md) | Árbol de utilidad y 11 escenarios QAS con tácticas y evidencia |
 | 3 | [Vistas C4](docs/03-vistas-c4.md) | Contexto, contenedores, componentes, despliegue y dinámica |
-| 4 | [Decisiones (ADR)](docs/adr/README.md) | 11 decisiones con alternativas y consecuencias |
+| 4 | [Decisiones (ADR)](docs/adr/README.md) | 12 decisiones con alternativas y consecuencias |
 | 5 | [Arquitectura empresarial](docs/05-arquitectura-empresarial.md) | TOGAF ADM, capacidades, capas ArchiMate, *gap analysis* |
 | 6 | [Gobierno de TI](docs/06-gobierno-ti.md) | COBIT 2019, FinOps Framework, ISO/IEC 38500, RACI, KPIs |
 | 7 | [Modelo de datos](docs/07-modelo-datos.md) | Modelo canónico y patrones de acceso de DynamoDB |

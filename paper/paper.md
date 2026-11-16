@@ -18,7 +18,7 @@ Amazon DynamoDB: combina claves naturales deterministas, transacciones atómicas
 para garantizar un efecto *exactamente-una-vez* sobre los agregados, aunque la mensajería entregue *al-menos-una-vez*
 y los proveedores revisen sus cifras durante horas. La solución se diseñó con arquitectura hexagonal, CQRS y un
 estilo serverless orientado a eventos en AWS, se documentó con el modelo C4 y ADR, y se alineó con TOGAF, COBIT 2019,
-ISO/IEC 38500 y el FinOps Framework. La evaluación combina 87 pruebas automatizadas (95,2 % de cobertura de ramas),
+ISO/IEC 38500 y el FinOps Framework. La evaluación combina 94 pruebas automatizadas (95,5 % de cobertura de ramas),
 pruebas basadas en propiedades y pruebas de estrés con inyección de 15 % de mensajes duplicados. En todos los
 escenarios medidos el costo agregado coincidió exactamente con el costo real, y la arquitectura cumplió por
 construcción los once atributos de calidad exigidos.
@@ -279,9 +279,9 @@ repositorio en local) y nunca se devuelven al navegador.
 
 | Indicador | Resultado |
 |---|---|
-| Pruebas automatizadas | 87 (60 unitarias, 1 de propiedades × 150 ejemplos, 13 de integración con AWS emulado, 13 de handlers) |
-| Cobertura de ramas | 95,2 % (umbral: 80 %) |
-| Tipado estático | `mypy --strict`: 0 errores en 32 módulos |
+| Pruebas automatizadas | 94 (67 unitarias, 1 de propiedades × 150 ejemplos, 13 de integración con AWS emulado, 13 de handlers) |
+| Cobertura de ramas | 95,5 % (umbral: 80 %) |
+| Tipado estático | `mypy --strict`: 0 errores en 35 módulos |
 | Lint y seguridad estática | `ruff` (incluye reglas de bandit): 0 hallazgos |
 | Tiempo de la suite | ≈ 11 s, sin cuenta de AWS |
 
@@ -336,7 +336,7 @@ hayan medido.
 | Interoperabilidad | Modelo canónico, OpenAPI 3.1, OAuth 2.0 | Ingesta *push* de extremo a extremo | **Verificado** |
 | Modificabilidad | Hexagonal, Strategy/Registry | Proveedor nuevo = 1 módulo + 1 registro | **Verificado** |
 | Mantenibilidad | Capas, tipado estricto, lint en CI | 0 hallazgos estáticos | **Verificado** |
-| Testabilidad | Puertos + dobles en memoria + moto | 95,2 % de cobertura sin AWS | **Verificado** |
+| Testabilidad | Puertos + dobles en memoria + moto | 95,5 % de cobertura sin AWS | **Verificado** |
 | Reusabilidad | Módulos Terraform y conectores desacoplados | `lambda_function` × 4 | **Verificado** |
 | Soportabilidad | Logs JSON, X-Ray, EMF, runbook, alarmas | Dashboard operativo en IaC | Por diseño |
 

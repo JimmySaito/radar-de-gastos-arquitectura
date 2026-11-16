@@ -151,7 +151,7 @@ El tamaño de los módulos está acotado y el núcleo de dominio no depende de A
 
 ### QAS-T1 — Testabilidad
 Los puertos permiten probar el dominio con adaptadores en memoria y la infraestructura con moto.
-**Medida:** cobertura de ramas ≥ 80 % (lograda: 95,2 %), suite completa en menos de 30 s y sin cuenta de AWS.
+**Medida:** cobertura de ramas ≥ 80 % (lograda: 95,5 %), suite completa en menos de 30 s y sin cuenta de AWS.
 
 ### QAS-RU1 — Reusabilidad
 Hay módulos Terraform genéricos (`lambda_function`, `sqs_queue`, `static_site`, `cost_reader_role`) y

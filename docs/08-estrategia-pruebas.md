@@ -11,7 +11,7 @@
 | Estáticas | ruff, mypy --strict, bandit, checkov, terraform validate | Estilo, tipos, seguridad del código e IaC | CI |
 | Carga / estrés | k6 (AWS), `loadgen.py` (local y AWS) | Rendimiento, elasticidad, consistencia bajo duplicados | 4 escenarios |
 
-Cobertura de ramas: **96,4 %** (umbral de CI: 80 %). Tiempo de la suite: alrededor de 11 s, sin cuenta de AWS.
+Cobertura (líneas y ramas): **96,3 %** con 130 pruebas (umbral de CI: 80 %). Tiempo de la suite: alrededor de 11 s, sin cuenta de AWS.
 
 ## 8.2 Plan de pruebas de estrés
 
@@ -38,7 +38,7 @@ Métricas observadas: latencia (p50/p95/p99) de API Gateway, `ConcurrentExecutio
 | Stress (rampa 6→120 req/s) | 964 | 28,4 | 322,8 | 78 | 355 / 1.875 / 2.490 | 606 / 3.034 / 5.535 | 2,1 % (lecturas) | 274.696,88 = 274.696,88 ✔ |
 | Spike (12→120 req/s) | 688 | 22,9 | 235,2 | 60 | 246 / 1.165 / 1.456 | 326 / 1.645 / 5.371 | 2,5 % (lecturas) | 177.450,48 = 177.450,48 ✔ |
 
-Datos crudos: `usage-hub/docs/results/local-*.json`.
+Datos crudos: `radar-de-gastos/docs/results/local-*.json`.
 
 **Interpretación:**
 - **Confiabilidad (QAS-R1) confirmada:** en los tres escenarios, con 60-78 lotes duplicados inyectados, el costo

@@ -1,5 +1,5 @@
 ---
-title: "Radar de gastos: arquitectura serverless con un ledger idempotente para el gobierno centralizado del consumo de servicios de IA y nube"
+title: "Radar de gastos: arquitectura serverless con un ledger idempotente para consolidar el gasto tecnológico recurrente, del consumo de IA y nube a las suscripciones"
 author:
   - "[Nombre del autor 1] — [Programa / Universidad]"
   - "[Nombre del autor 2] — [Programa / Universidad]"
@@ -9,27 +9,36 @@ lang: es
 
 # Resumen
 
-Las organizaciones consumen hoy, en paralelo, modelos de lenguaje de varios proveedores (Anthropic, OpenAI, Google)
-y servicios de nube (AWS). Cada proveedor reporta el consumo con unidades, identidades y latencias distintas, lo que
-impide responder con oportunidad cuánto se gasta, en qué y quién lo consume. Este trabajo presenta **Radar de gastos**, una
-plataforma FinOps que centraliza esos datos en un modelo canónico, atribuye cada costo a una persona y a un equipo, y
-habilita presupuestos con alertas. La contribución técnica central es un **ledger idempotente basado en deltas** sobre
+Las organizaciones y las personas pagan hoy tecnología por dos vías que rara vez se miran juntas: el **consumo
+variable** de modelos de lenguaje (Anthropic, OpenAI, Google) y de servicios de nube (AWS), y las **suscripciones de
+precio fijo** (licencias SaaS, herramientas de IA, streaming, almacenamiento). Cada proveedor reporta con unidades,
+identidades, monedas y calendarios distintos, lo que impide responder con oportunidad cuánto se gasta, en qué, quién y
+cuándo llega el próximo cobro. Este trabajo presenta **Radar de gastos**, una plataforma que consolida ambas vías en
+un solo instrumento con dos espacios: **Empresa**, que atribuye el consumo a personas y equipos, controla presupuestos
+e inventaria licencias, y **Personal**, que proyecta el calendario de cobros de un hogar y reparte las suscripciones
+compartidas entre sus miembros. El alcance nació centrado en el consumo de IA y nube y se amplió durante el diseño,
+siguiendo la misma tendencia que la literatura de FinOps (*Cloud+*). La contribución técnica central es un **ledger idempotente basado en deltas** sobre
 Amazon DynamoDB: combina claves naturales deterministas, transacciones atómicas y control de concurrencia optimista
 para garantizar un efecto *exactamente-una-vez* sobre los agregados, aunque la mensajería entregue *al-menos-una-vez*
 y los proveedores revisen sus cifras durante horas. La solución se diseñó con arquitectura hexagonal, CQRS y un
 estilo serverless orientado a eventos en AWS, se documentó con el modelo C4 y ADR, y se alineó con TOGAF, COBIT 2019,
-ISO/IEC 38500 y el FinOps Framework. La evaluación combina 129 pruebas automatizadas (96,4 % de cobertura de ramas),
+ISO/IEC 38500 y el FinOps Framework. La evaluación combina 130 pruebas automatizadas (96,3 % de cobertura),
 pruebas basadas en propiedades y pruebas de estrés con inyección de 15 % de mensajes duplicados. En todos los
 escenarios medidos el costo agregado coincidió exactamente con el costo real, y la arquitectura cumplió por
 construcción los once atributos de calidad exigidos.
 
-**Palabras clave:** FinOps, gobierno de TI, arquitectura serverless, idempotencia, CQRS, arquitectura hexagonal, AWS, IA generativa.
+**Palabras clave:** FinOps, gobierno de TI, gestión de suscripciones, SaaS, arquitectura serverless, idempotencia, CQRS, arquitectura hexagonal, AWS, IA generativa.
 
 # Abstract
 
-Organizations increasingly consume large language models from several vendors alongside cloud services, each
-reporting usage with different units, identities and delays. We present Radar de gastos, a FinOps platform that consolidates
-this data into a canonical model, attributes cost to people and teams, and enforces budgets. Its core is an idempotent,
+Organizations and individuals pay for technology through two channels that are seldom viewed together: variable
+consumption of large language models and cloud services, and fixed-price subscriptions (SaaS licenses, AI tools,
+streaming, storage). Each vendor reports with different units, identities, currencies and billing calendars. We
+present Radar de gastos, a platform that consolidates both channels in a single instrument with two spaces: a
+business space that attributes consumption to people and teams, enforces budgets and inventories licenses, and a
+personal space that projects a household's billing calendar and splits shared subscriptions among its members. The
+scope started with AI and cloud consumption and was broadened during design, mirroring the *Cloud+* trend in the
+FinOps literature. Its core is an idempotent,
 delta-based ledger on Amazon DynamoDB that guarantees exactly-once effects on aggregates despite at-least-once
 delivery and provider-side revisions, using deterministic natural keys, atomic transactions and optimistic concurrency
 control. The prototype follows hexagonal architecture, CQRS and an event-driven serverless style on AWS, and is aligned
@@ -53,36 +62,145 @@ poco tratado en la literatura de FinOps: los datos de consumo llegan con retraso
 entrega mensajes al menos una vez. Si se suman ingenuamente, el gasto reportado se infla. En un sistema financiero,
 un error de agregación no es un detalle de implementación: compromete la confianza en todo el instrumento de gobierno.
 
-Este artículo aborda la pregunta: **¿cómo diseñar una plataforma centralizada, extensible y económica de observabilidad
-del consumo de IA y nube que garantice exactitud de los agregados bajo entrega duplicada, revisiones de los proveedores
-y escritura concurrente?** Las contribuciones son:
+El consumo variable, sin embargo, es solo una parte del gasto tecnológico. Junto a él crecen las **suscripciones de
+precio fijo**: licencias SaaS que compran las áreas de negocio sin pasar por TI, herramientas de IA pagadas con
+tarjeta corporativa y, en el plano personal, servicios de streaming, música, almacenamiento o asistentes de IA que
+se renuevan solos. En 2026, las unidades de negocio controlaban el 81 % del gasto SaaS de las organizaciones
+analizadas por Zylo y ChatGPT era la aplicación más reembolsada como gasto [32]; en el hogar, los consumidores
+estiman su gasto mensual en suscripciones en menos de la mitad de lo que realmente pagan [33]. Que el gasto esté
+repartido en muchos cobros pequeños y automáticos no lo hace menor: lo hace **invisible**.
 
-1. Una arquitectura de referencia serverless en AWS para FinOps multiproveedor, documentada con el modelo C4, diez
-   decisiones de arquitectura (ADR) y escenarios de calidad para once atributos.
+## 1.1 Alcance y su evolución
+
+El proyecto comenzó con un alcance acotado: un tablero centralizado del consumo de servicios de IA (Claude, Gemini,
+ChatGPT) y de nube (AWS) por miembro del equipo. Durante la construcción, al conectar cuentas reales, se hicieron
+evidentes dos límites de ese planteamiento. Primero, buena parte del uso de IA no pasa por APIs medibles sino por
+**planes de suscripción** (claude.ai, ChatGPT Plus, Claude Code con planes Pro o Max), cuyo costo es fijo y cuyo
+consumo los proveedores no exponen de forma programática (ADR-0012). Segundo, quienes evaluaban el prototipo
+preguntaban por el resto de sus cobros recurrentes, corporativos y personales, porque la pregunta que les importaba
+no era "¿cuántos tokens usé?" sino "¿cuánto se me va al mes y cuándo me cobran?".
+
+El alcance se amplió, por tanto, del **consumo de IA y nube** al **gasto tecnológico recurrente consolidado**, en
+dos espacios separados (ADR-0013 y ADR-0014):
+
+| Dimensión | Alcance inicial | Alcance final |
+|---|---|---|
+| Qué se mide | Consumo variable de IA y nube | Consumo variable **y** suscripciones de precio fijo |
+| Para quién | Equipos de una organización | Organizaciones (**Empresa**) y hogares (**Personal**) |
+| Unidad de atribución | Persona y equipo | Persona y equipo; en lo personal, miembros del hogar con cobros compartidos |
+| Horizonte | Gasto ocurrido | Gasto ocurrido **y** cobros próximos (calendario y proyección anual) |
+| Fuentes | APIs de proveedores e ingesta *push* | Lo anterior más registro manual guiado por un catálogo de servicios |
+
+La ampliación no reemplazó el núcleo: el ledger idempotente, el modelo canónico y la arquitectura hexagonal se
+mantuvieron, y lo nuevo se agregó como un dominio puro adicional (cobros recurrentes) detrás de sus propios puertos.
+Que el cambio de alcance no exigiera rediseñar lo existente es, en sí mismo, evidencia de la **modificabilidad**
+buscada. La misma ampliación ocurrió en la disciplina: en 2025 la FinOps Foundation incorporó al marco los *Scopes*
+para gobernar SaaS, licencias e IA además de la nube pública (*Cloud+*) [27], y en 2026 el 90 % de los equipos de
+FinOps ya gestionaba gasto SaaS y el 98 %, gasto de IA [28].
+
+## 1.2 Pregunta de investigación y contribuciones
+
+Este artículo aborda la pregunta: **¿cómo diseñar una plataforma consolidada, extensible y económica del gasto
+tecnológico recurrente —consumo variable de IA y nube más suscripciones de precio fijo— que garantice exactitud de
+los agregados bajo entrega duplicada, revisiones de los proveedores y escritura concurrente?** Las contribuciones son:
+
+1. Una arquitectura de referencia serverless en AWS para FinOps multiproveedor, documentada con el modelo C4,
+   catorce decisiones de arquitectura (ADR) y escenarios de calidad para once atributos.
 2. Un **algoritmo de ledger idempotente basado en deltas** con control de concurrencia optimista, separado como lógica
    de dominio pura y verificado con pruebas basadas en propiedades.
-3. La alineación explícita de la solución con marcos de arquitectura empresarial (TOGAF, ArchiMate) y de gobierno
+3. Un **modelo de dominio de cobros recurrentes** que proyecta calendarios sin acumular desfases, reparte cobros
+   compartidos al centavo y resume por moneda sin inventar tipos de cambio, integrado con el consumo variable en una
+   misma herramienta.
+4. La alineación explícita de la solución con marcos de arquitectura empresarial (TOGAF, ArchiMate) y de gobierno
    (COBIT 2019, ISO/IEC 38500, FinOps Framework), incluidos KPIs y una matriz RACI.
-4. Un prototipo de código abierto con infraestructura como código, CI y un protocolo de pruebas de estrés que verifica
+5. Un prototipo de código abierto con infraestructura como código, CI y un protocolo de pruebas de estrés que verifica
    la **consistencia** y no solo el rendimiento.
 
-El resto del artículo se organiza así: la sección 2 revisa la literatura; la 3 describe la metodología; la 4, la
-implementación; la 5 presenta y discute los resultados; y la 6 concluye y propone trabajo futuro.
+El resto del artículo se organiza así: la sección 2 revisa el estado del arte y argumenta por qué consolidar; la 3
+describe la metodología; la 4, la implementación; la 5 presenta y discute los resultados; y la 6 concluye y propone
+trabajo futuro.
 
-# 2. Revisión de literatura
+# 2. Revisión de literatura y estado del arte
 
 ## 2.1 Gobierno de TI y FinOps
 
-COBIT 2019 [5] define objetivos de gobierno y gestión; el objetivo **APO06 (Gestionar el presupuesto y los costos)**
-exige asignar los costos de TI a los consumidores y controlar el gasto frente a presupuestos. ISO/IEC 38500 [6]
-establece seis principios para la dirección de TI (responsabilidad, estrategia, adquisición, desempeño, conformidad y
-comportamiento humano), entre ellos que cada uso de TI tenga un responsable identificable. El FinOps Framework [7] y
-Storment y Fuller [8] trasladan esos principios al costo variable de la nube y proponen un modelo de madurez
-(*crawl*, *walk*, *run*) donde la asignación de costos es requisito de las fases posteriores. Estos trabajos definen
-**qué** debe lograrse (visibilidad, asignación, presupuestos), pero no **cómo** construir una plataforma confiable
-cuando las fuentes son heterogéneas y revisables. Esa es la brecha que aborda este trabajo.
+COBIT 2019 [5] define objetivos de gobierno y gestión. Tres son directamente pertinentes: **APO06 (Gestionar el
+presupuesto y los costos)**, que exige asignar los costos de TI a los consumidores y controlarlos frente a
+presupuestos; **APO10 (Gestionar los proveedores)**, que pide conocer y supervisar los contratos vigentes; y **BAI09
+(Gestionar los activos)**, que incluye el inventario y la optimización de licencias. ISO/IEC 38500 [6] establece seis
+principios para la dirección de TI (responsabilidad, estrategia, adquisición, desempeño, conformidad y comportamiento
+humano), entre ellos que cada uso de TI tenga un responsable identificable. El FinOps Framework [7] y Storment y
+Fuller [8] trasladan esos principios al costo variable de la nube y proponen un modelo de madurez (*crawl*, *walk*,
+*run*) donde la asignación de costos es requisito de las fases posteriores.
 
-## 2.2 Arquitectura empresarial
+La disciplina amplió su objeto de estudio en los últimos dos años. La actualización de 2025 del marco introdujo los
+**Scopes**, que permiten aplicar las mismas capacidades a SaaS, licencias, centros de datos e IA además de la nube
+pública, un enfoque que la Fundación denomina *Cloud+* [27]. Las encuestas anuales de practicantes muestran la
+velocidad del cambio: en 2025, el 63 % de los equipos ya gestionaba gasto de IA (frente al 31 % un año antes) y el
+65 % recibía el encargo de optimizar SaaS [29]; en 2026, esas cifras llegaron al 98 % y al 90 %, con un 64 % que
+gestionaba licencias [28]. El problema de fondo no se ha resuelto: el 85 % de las organizaciones considera la
+gestión del gasto en la nube su principal desafío, y el desperdicio estimado volvió a crecer, hasta el 29 %, por
+primera vez en cinco años, impulsado por las cargas de IA [31].
+
+Para la integración de datos, la especificación abierta **FOCUS** (*FinOps Open Cost and Usage Specification*)
+define columnas normalizadas de costo y uso; su versión 1.2 (2025) añadió soporte para facturación SaaS y
+normalización multimoneda [30]. FOCUS valida el enfoque de **modelo canónico** adoptado aquí, aunque está pensado
+para exportaciones de facturación de grandes proveedores y no para suscripciones que una persona registra a mano.
+
+Estos trabajos definen **qué** debe lograrse (visibilidad, asignación, presupuestos) y, cada vez más, **sobre qué**
+(todo el gasto tecnológico, no solo la nube), pero no **cómo** construir una plataforma confiable cuando las fuentes
+son heterogéneas, revisables y, en parte, manuales.
+
+## 2.2 Gestión de activos de software y del gasto SaaS
+
+La gestión de activos de software tiene su norma de referencia en ISO/IEC 19770-1 [34], que define los procesos de
+inventario, control de licencias y ciclo de vida. Su aplicación al modelo SaaS enfrenta un problema nuevo: la compra
+se descentralizó. El índice de Zylo de 2026, construido sobre los datos de sus clientes, reporta que las unidades de
+negocio controlan el 81 % del gasto SaaS y TI gestiona directamente solo el 15 %; que el gasto pagado como reembolso
+de gastos creció 267 % en un año, con ChatGPT como la aplicación más reembolsada; que el gasto en aplicaciones nativas
+de IA creció 108 % (393 % en organizaciones de más de 10.000 empleados); que en promedio el 36 % de las licencias
+queda sin usar; y que el 78 % de los líderes de TI encuestados recibió cobros inesperados ligados al consumo o a
+precios de IA [32]. La edición de 2025 estimaba en 21 millones de dólares anuales el gasto promedio en licencias sin
+uso [38]. Aunque estas cifras provienen de un proveedor del sector y deben leerse con esa cautela, describen el
+mismo fenómeno: **el gasto existe, pero no está a la vista de quien debe gobernarlo**.
+
+## 2.3 Economía de las suscripciones y comportamiento
+
+La economía del comportamiento explica por qué el modelo de suscripción dificulta el control del gasto. Thaler [35]
+mostró que las personas llevan una **contabilidad mental** por categorías, y que los pagos pequeños y automáticos
+quedan fuera de esas cuentas. Gourville y Soman [36] encontraron que, cuando el pago se separa en el tiempo del
+consumo, su peso en las decisiones se deprecia: lo que se cobra solo deja de sentirse como gasto. DellaVigna y
+Malmendier [37] documentaron que los usuarios de gimnasios con cuota mensual sobrestiman cuánto usarán el servicio y
+pagan más que con el pago por visita, y que tardan meses en cancelar membresías que ya no usan.
+
+Los datos de consumo confirman el efecto. En una encuesta de C+R Research a 1.000 consumidores estadounidenses, los
+participantes estimaron su gasto mensual en suscripciones en 86 dólares; al detallarlo cobro por cobro, el promedio
+fue de 219 dólares. El 74 % dijo que es fácil olvidar los cobros recurrentes y el 42 % reconoció haber seguido
+pagando por servicios que ya no usaba [33]. La conclusión para el diseño es directa: **un instrumento de control
+debe sacar a la luz el cobro antes de que ocurra**, no solo registrarlo después.
+
+## 2.4 Herramientas existentes
+
+El mercado ofrece herramientas maduras, pero cada categoría cubre un fragmento del gasto. La Tabla 1 resume las
+capacidades típicas de cada categoría; es una valoración cualitativa, no una evaluación de productos concretos.
+
+| Categoría | Consumo de IA por API | Nube | Licencias SaaS | Suscripciones personales | Atribución a personas |
+|---|---|---|---|---|---|
+| Consolas de cada proveedor (AWS Cost Explorer, consolas de Anthropic y OpenAI) | Solo el propio | Solo el propio | — | — | Por llave, proyecto o etiqueta |
+| Plataformas FinOps de nube | Si se factura por la nube | ● | Parcial | — | Por etiquetas |
+| Plataformas de gestión de SaaS | — | — | ● | — | Por usuario licenciado |
+| Pasarelas de LLM (p. ej. LiteLLM [39]) | Solo el tráfico que pasa por la pasarela | — | — | — | Por llave, usuario o equipo |
+| Aplicaciones de finanzas personales | — | — | — | ● | Individual |
+| **Radar de gastos** | ● | ● | ● | ● (registro manual) | Persona, equipo y miembros del hogar |
+
+*Tabla 1. Cobertura del gasto tecnológico por categoría de herramienta (● = cubierto).*
+
+Dos vacíos resultan de la tabla. Primero, ninguna categoría une el **consumo variable** con las **suscripciones de
+precio fijo**, aunque para quien paga ambas son el mismo presupuesto. Segundo, las herramientas corporativas no
+contemplan lo personal y las personales no contemplan el consumo por API, cuando la frontera entre ambos es cada vez
+más difusa: la misma persona paga un plan de Claude o ChatGPT con su tarjeta y consume la API de su empresa.
+
+## 2.5 Arquitectura empresarial
 
 TOGAF [3] organiza el desarrollo de arquitectura en el ciclo ADM (visión, negocio, sistemas de información,
 tecnología, oportunidades, migración, gobierno de la implementación y gestión del cambio). ArchiMate [4] aporta una
@@ -90,7 +208,7 @@ notación por capas (negocio, aplicación, tecnología) que relaciona capacidade
 En este trabajo se usan para trazar el problema de negocio (fragmentación del gasto) hasta componentes concretos
 y para planificar arquitecturas de transición.
 
-## 2.3 Arquitectura de software y atributos de calidad
+## 2.6 Arquitectura de software y atributos de calidad
 
 Bass, Clements y Kazman [1] formalizan los **escenarios de atributos de calidad** (fuente, estímulo, artefacto,
 entorno, respuesta y medida) y catalogan **tácticas** para cada atributo. El método ATAM [2] usa árboles de utilidad
@@ -100,7 +218,7 @@ consecuencias. La **arquitectura hexagonal** [9] aísla el dominio mediante puer
 los modelos de escritura y de lectura para optimizarlos de forma independiente. El **modelo de datos canónico** de
 Hohpe y Woolf [10] reduce de N×M a N+M las transformaciones necesarias para integrar sistemas heterogéneos.
 
-## 2.4 Computación serverless
+## 2.7 Computación serverless
 
 Jonas et al. [14] caracterizan la computación serverless por la abstracción de servidores, el escalado automático a
 cero y el pago por uso, e identifican como desafíos el estado, la coordinación y la latencia de arranque. El AWS
@@ -108,7 +226,7 @@ Well-Architected Framework y su *Serverless Lens* [18] recomiendan colas como am
 leveling*), colas de mensajes fallidos (DLQ) e idempotencia de los consumidores, ya que servicios como SQS estándar
 garantizan entrega al menos una vez.
 
-## 2.5 Idempotencia, consistencia y concurrencia
+## 2.8 Idempotencia, consistencia y concurrencia
 
 Helland [12] sostiene que en sistemas distribuidos los mensajes se reintentan y, por tanto, toda operación debe
 diseñarse para ser idempotente. Kleppmann [11] analiza que la semántica *exactamente-una-vez* no se logra en el
@@ -119,12 +237,41 @@ resulta eficiente cuando los conflictos son poco frecuentes. Brooker [22] muestr
 *jitter* reduce la contención en reintentos concurrentes. DeBrie [19] documenta el diseño de tabla única en DynamoDB a
 partir de patrones de acceso.
 
-## 2.6 Síntesis y brecha
+## 2.9 Por qué consolidar el gasto en una sola herramienta
 
-La literatura de gobierno define los objetivos (asignación, presupuestos) y la de sistemas distribuidos aporta los
-mecanismos (idempotencia, OCC, colas). Sin embargo, no se encontró una propuesta que **integre** ambos mundos para el
-caso específico del consumo multiproveedor de IA, donde coinciden tres fuentes de duplicación: la mensajería, la
-relectura periódica y las revisiones del proveedor. Este trabajo propone y evalúa esa integración.
+La revisión anterior permite sostener que consolidar no es una comodidad visual, sino una condición del gobierno.
+Los argumentos son cinco:
+
+1. **No se gobierna lo que no se ve.** APO06 y la fase *Inform* de FinOps exigen visibilidad como primer paso [5],
+   [7]. Cuando el gasto se reparte entre consolas, tarjetas y reembolsos, la suma total no existe en ningún lugar, y
+   la decisión se toma sobre una fracción. La brecha entre los 86 dólares estimados y los 219 reales [33], o el 81 %
+   del gasto SaaS fuera del control de TI [32], son la misma falla vista desde el hogar y desde la empresa.
+2. **La responsabilidad necesita un nombre.** ISO/IEC 38500 pide que cada uso de TI tenga un responsable [6]. Las
+   consolas atribuyen el costo a llaves y proyectos; solo una vista consolidada con un mapeo explícito puede
+   atribuirlo a personas, equipos o miembros del hogar, condición del *showback* y del *chargeback*.
+3. **El control debe ser anticipado.** El sesgo de los pagos automáticos [36] y los cobros inesperados que reporta el
+   78 % de los líderes de TI [32] muestran que registrar el gasto después no basta. Un calendario de próximos cobros
+   y presupuestos con alertas tempranas convierten el control reactivo en preventivo.
+4. **El desperdicio se esconde entre fuentes.** Licencias sin uso (36 % en promedio [32]), suscripciones duplicadas
+   entre áreas o miembros de un hogar, y planes de IA pagados a la vez por suscripción y por API solo se detectan al
+   comparar fuentes lado a lado. Ninguna consola individual puede revelar una duplicidad que involucra a otra.
+5. **El gasto de IA cruza todas las categorías.** La misma capacidad se paga por API, por suscripción individual,
+   por licencia corporativa o dentro de la factura de la nube. Gobernarla exige verla completa; de lo contrario, la
+   reducción en un canal reaparece en otro.
+
+Consolidar también tiene un costo: más integraciones que mantener, más datos sensibles en un solo lugar y el riesgo
+de mostrar cifras incorrectas con apariencia de autoridad. Por eso la exactitud de los agregados (sección 2.8) y la
+seguridad de las credenciales son requisitos de primer orden en este diseño, y no atributos secundarios.
+
+## 2.10 Síntesis y brecha
+
+La literatura de gobierno define los objetivos (asignación, presupuestos, inventario) y ya extiende su alcance a
+todo el gasto tecnológico; la de comportamiento explica por qué el gasto recurrente escapa al control; y la de
+sistemas distribuidos aporta los mecanismos (idempotencia, OCC, colas). Las herramientas existentes, en cambio,
+siguen especializadas por tipo de gasto. No se encontró una propuesta que **integre** los tres mundos: un
+instrumento que reúna el consumo variable de varios proveedores de IA y nube —donde coinciden tres fuentes de
+duplicación: la mensajería, la relectura periódica y las revisiones del proveedor— con las suscripciones de precio
+fijo de una organización y de un hogar. Este trabajo propone y evalúa esa integración.
 
 # 3. Metodología
 
@@ -145,6 +292,12 @@ de la arquitectura fue **guiado por atributos de calidad** [1]:
 7. **Evaluación:** pruebas automatizadas, pruebas de propiedades, pruebas de estrés con verificación de consistencia y
    análisis de *trade-offs*.
 
+La ciencia del diseño es iterativa: cada demostración puede redefinir el problema. Así ocurrió aquí. La evaluación
+del primer artefacto con cuentas reales mostró que el consumo por API era solo una parte del gasto que los usuarios
+querían controlar, y el problema se redefinió como se describe en la sección 1.1. Cada ampliación siguió el mismo
+procedimiento: un ADR con las alternativas consideradas (0012 a 0014), un dominio nuevo detrás de puertos propios,
+pruebas del dominio antes de la interfaz y verificación de que las pruebas existentes seguían pasando sin cambios.
+
 ## 3.2 Tecnologías
 
 | Ámbito | Tecnología | Justificación |
@@ -155,7 +308,7 @@ de la arquitectura fue **guiado por atributos de calidad** [1]:
 | Datos | Amazon DynamoDB *on-demand* | Transacciones ACID, OCC por condiciones, escalado automático |
 | API e identidad | API Gateway HTTP, Amazon Cognito | Autorizador JWT nativo, OAuth 2.0 (PKCE y *client credentials*) |
 | Planificación | EventBridge Scheduler | Recolección horaria y evaluación diaria de presupuestos |
-| Frontend | SPA estática, Chart.js, CloudFront + S3 | Sin servidores; cabeceras de seguridad en el borde |
+| Frontend | SPA estática, Chart.js (servido desde el propio origen), CloudFront + S3 | Sin servidores; cabeceras de seguridad en el borde; funciona sin internet en local |
 | Observabilidad | AWS Lambda Powertools, CloudWatch, X-Ray | Logs estructurados, métricas EMF, trazas |
 | IaC y CI | Terraform (módulos), GitHub Actions (OIDC) | Reproducibilidad y gobierno de cambios |
 | Pruebas | pytest, Hypothesis [24], moto, respx, k6 | Pirámide completa sin depender de la nube |
@@ -241,8 +394,10 @@ El autorizador JWT de API Gateway valida los tokens de Cognito antes de invocar 
 **exclusivamente** de la claim inmutable `custom:tenant_id`, o de la configuración `client_id → tenant` en el caso de
 clientes M2M. Un cuerpo que incluya `tenant_id` se rechaza, lo que mitiga la vulnerabilidad BOLA (OWASP API1:2023
 [23]). Las llaves Admin de los proveedores, de solo lectura, se guardan en Secrets Manager con caché TTL de 5 min.
-Cada función tiene un rol IAM propio con acciones explícitas. El frontend se sirve desde un *bucket* privado con OAC y
-una política de seguridad de contenido (CSP) estricta.
+Cada función tiene un rol IAM propio con acciones explícitas. Los datos en reposo (tabla, logs, variables de entorno,
+tópico de alertas y horarios) se cifran con una llave KMS administrada por el cliente con rotación anual. El
+frontend se sirve desde un *bucket* privado con OAC y una política de seguridad de contenido (CSP) que solo permite
+scripts del propio origen.
 
 ## 4.6 Infraestructura, observabilidad y CI
 
@@ -251,7 +406,9 @@ Terraform compone cuatro módulos reutilizables: `lambda_function` (instanciado 
 `RecordsUnchanged`, `LedgerRetry*`, `QueueToLedgerLatency`) sin llamadas síncronas. Un dashboard operativo y alarmas
 de SLO (5xx > 1 %, p95 > 800 ms, DLQ > 0, edad de la cola > 15 min) completan la soportabilidad. El pipeline de CI
 ejecuta formato, lint (incluido bandit), `mypy --strict`, pruebas con umbral de cobertura, `pip-audit`, `checkov` y
-`terraform validate`. El despliegue usa credenciales temporales vía OIDC.
+`terraform validate`. Checkov actúa como barrera: un hallazgo nuevo detiene el pipeline, y cada excepción aceptada
+se justifica en el propio recurso. Un script reproduce el despliegue completo (empaquetado, Terraform, datos de
+ejemplo y alta del administrador), y el mismo código corre en local sin AWS como entorno de respaldo.
 
 ## 4.7 Dashboard
 
@@ -295,17 +452,22 @@ permite explorar el panel sin datos propios.
 
 | Indicador | Resultado |
 |---|---|
-| Pruebas automatizadas | 129 (95 unitarias, 2 de propiedades, 15 de integración con AWS emulado, 17 de handlers) |
-| Cobertura de ramas | 96,4 % (umbral: 80 %) |
+| Pruebas automatizadas | 130 (96 unitarias, 2 de propiedades, 15 de integración con AWS emulado, 17 de handlers) |
+| Cobertura (líneas y ramas) | 96,3 % (umbral: 80 %) |
 | Tipado estático | `mypy --strict`: 0 errores en 38 módulos |
-| Lint y seguridad estática | `ruff` (incluye reglas de bandit): 0 hallazgos |
+| Lint y seguridad estática | `ruff` y `bandit`: 0 hallazgos; `pip-audit`: 0 vulnerabilidades conocidas |
+| Seguridad de la infraestructura | Checkov: 291 controles aprobados, 0 fallidos, 24 excepciones justificadas |
 | Tiempo de la suite | ≈ 11 s, sin cuenta de AWS |
 
-La prueba de propiedades genera secuencias arbitrarias de hasta 12 revisiones con costos, tokens y atribuciones
+La primera prueba de propiedades genera secuencias arbitrarias de hasta 12 revisiones con costos, tokens y atribuciones
 aleatorias, cada una entregada entre una y tres veces. Verifica que, en las tres dimensiones, el agregado sea igual a
 la última versión del hecho y que solo quede la última atribución. Las pruebas de integración inyectan
 `TransactionConflict` y `ConditionalCheckFailed` y simulan dos *workers* que leen la misma versión. En todos los casos
-el resultado converge al valor correcto.
+el resultado converge al valor correcto. La segunda prueba de propiedades cubre el dominio de cobros recurrentes:
+para fechas ancla, ventanas y ciclos de facturación arbitrarios, verifica que los cobros proyectados sean
+estrictamente crecientes y caigan dentro de la ventana, incluidos los meses cortos. Otras pruebas del mismo dominio
+comprueban que el reparto de un cobro compartido sume exactamente el total y que la vista por persona coincida al
+centavo con el resumen del hogar.
 
 ## 5.2 Pruebas de estrés con verificación de consistencia
 
@@ -348,11 +510,11 @@ hayan medido.
 | Disponibilidad | Cola + DLQ, lote parcial, servicios multi-AZ | Prueba de aislamiento de fallas por mensaje | Verificado en pruebas; SLO por medir en AWS |
 | Desempeño | Asincronía, CQRS, particiones mensuales | Medición local; umbrales k6 definidos | Parcial (pendiente en AWS) |
 | Escalabilidad | Lambda + SQS + DynamoDB *on-demand*, concurrencia acotada | Escenarios *stress*/*spike* definidos | Por diseño; pendiente en AWS |
-| Seguridad | JWT, tenant desde la claim, mínimo privilegio, cifrado | `test_tenant_isolation`, modelo STRIDE | **Verificado** |
+| Seguridad | JWT, tenant desde la claim, mínimo privilegio, cifrado con CMK | `test_tenant_isolation`, modelo STRIDE, Checkov sin fallos | **Verificado** |
 | Interoperabilidad | Modelo canónico, OpenAPI 3.1, OAuth 2.0 | Ingesta *push* de extremo a extremo | **Verificado** |
-| Modificabilidad | Hexagonal, Strategy/Registry | Proveedor nuevo = 1 módulo + 1 registro | **Verificado** |
+| Modificabilidad | Hexagonal, Strategy/Registry | Proveedor nuevo = 1 módulo + 1 registro; ampliación del alcance sin modificar el ledger | **Verificado** |
 | Mantenibilidad | Capas, tipado estricto, lint en CI | 0 hallazgos estáticos | **Verificado** |
-| Testabilidad | Puertos + dobles en memoria + moto | 96,4 % de cobertura sin AWS | **Verificado** |
+| Testabilidad | Puertos + dobles en memoria + moto | 96,3 % de cobertura sin AWS | **Verificado** |
 | Reusabilidad | Módulos Terraform y conectores desacoplados | `lambda_function` × 4 | **Verificado** |
 | Soportabilidad | Logs JSON, X-Ray, EMF, runbook, alarmas | Dashboard operativo en IaC | Por diseño |
 
@@ -365,7 +527,9 @@ hayan medido.
 3. **Extensibilidad real:** la API *push* convierte a "cualquier sistema" en fuente sin desarrollo adicional, y los
    conectores aíslan los cambios frecuentes de las APIs de los proveedores.
 4. **Gobierno integrado:** atribución, presupuestos con alertas idempotentes, KPIs y RACI conectan la herramienta con
-   APO06 y con las fases *Inform* y *Operate* de FinOps.
+   APO06 y con las fases *Inform* y *Operate* de FinOps; el inventario de licencias aporta a APO10 y BAI09.
+5. **Una sola vista del gasto:** consumo variable y suscripciones de precio fijo, de la empresa y del hogar, conviven
+   en un mismo instrumento, que es el vacío identificado en la Tabla 1.
 
 ## 5.5 Limitaciones
 
@@ -379,12 +543,22 @@ hayan medido.
 5. **Validación en la nube pendiente:** las cifras de rendimiento y elasticidad en AWS aún deben medirse con el
    protocolo provisto.
 6. **Aislamiento lógico:** el modelo *pool* de tabla compartida puede no bastar para clientes regulados [26].
+7. **Suscripciones registradas a mano:** a diferencia de las aplicaciones de finanzas personales, el prototipo no
+   detecta cobros en cuentas bancarias o correos; su exactitud depende de que el usuario mantenga el registro al día.
+8. **Sin conversión de divisas:** los totales se presentan por moneda para no introducir tipos de cambio no
+   verificados, lo que impide una cifra única cuando se paga en varias monedas.
+9. **Consumo de los planes de suscripción:** los proveedores no exponen por API el uso de planes como claude.ai o
+   ChatGPT Plus; solo se registra su precio fijo y, para Claude Code, una estimación a partir de los registros locales.
+10. **Evaluación con usuarios pendiente:** la utilidad del espacio personal para reducir gasto no se midió con un
+    estudio de usuarios.
 
 ## 5.6 Mejoras propuestas
 
 *Sharding* de agregados calientes y agregación vía DynamoDB Streams; caché de lectura por tenant y rango; *data lake*
 en S3 con Athena para análisis *ad hoc*; IAM con `dynamodb:LeadingKeys` para reforzar el aislamiento; pronóstico de
-gasto y detección de anomalías; conciliación automática con facturas.
+gasto y detección de anomalías; conciliación automática con facturas; importación y exportación en formato FOCUS
+[30]; detección de suscripciones duplicadas entre miembros o áreas; y conversión de divisas con una fuente de tipos
+de cambio auditable.
 
 # 6. Conclusión
 
@@ -395,15 +569,27 @@ deltas, con transacciones y control de concurrencia optimista, logró error de a
 inyectados, revisiones y escritura concurrente, verificado tanto por pruebas basadas en propiedades como por pruebas
 de estrés con comprobación de consistencia.
 
+El trabajo mostró también que el problema era más amplio de lo que planteaba su versión inicial. El gasto
+tecnológico de una organización o de un hogar no se divide en "consumo de IA" y "todo lo demás": se paga por API, por
+suscripción, por licencia y por reembolso, y gran parte se renueva sin que nadie lo decida de nuevo. La literatura de
+FinOps llegó a la misma conclusión con los *Scopes* [27], y los datos de mercado y de comportamiento [32], [33], [36]
+explican por qué el gasto fragmentado y automático escapa al control. Ampliar el alcance sin rediseñar el núcleo fue
+posible porque la arquitectura aislaba cada dominio detrás de puertos, lo que valida la apuesta por la
+modificabilidad.
+
 **Implicaciones para la práctica.** (i) Las plataformas FinOps deberían tratar la entrega duplicada y las revisiones
 de los proveedores como casos normales y no excepcionales. (ii) Un modelo canónico más una API de ingesta abierta
 convierte la integración de N proveedores en un problema lineal y desacopla la organización de los cambios de cada
-proveedor. (iii) Los marcos de gobierno (COBIT APO06, ISO/IEC 38500) ganan efectividad cuando se traducen a
-capacidades verificables: KPIs calculados por el sistema, alertas idempotentes y responsables explícitos (RACI).
+proveedor. (iii) Los marcos de gobierno (COBIT APO06, APO10, BAI09; ISO/IEC 38500) ganan efectividad cuando se
+traducen a capacidades verificables: KPIs calculados por el sistema, alertas idempotentes y responsables explícitos
+(RACI). (iv) Consolidar el consumo variable y las suscripciones en una sola vista es una condición del gobierno, no
+una comodidad: es la única forma de ver el total, asignar responsables, anticipar cobros y detectar duplicidades
+entre fuentes.
 
 **Trabajo futuro.** Ejecutar y publicar el protocolo de estrés en AWS; cuantificar la relación entre concurrencia y
 conflictos OCC para dimensionar el *sharding* de agregados; incorporar pronóstico y detección de anomalías sobre el
-ledger; y evaluar el modelo de aislamiento *silo* frente a *pool* para escenarios regulados.
+ledger; evaluar el modelo de aislamiento *silo* frente a *pool* para escenarios regulados; adoptar FOCUS como formato
+de intercambio; y medir con usuarios si la vista consolidada reduce el gasto no deseado.
 
 # Referencias
 
@@ -458,3 +644,29 @@ ledger; y evaluar el modelo de aislamiento *silo* frente a *pool* para escenario
 [25] P. Bailis y A. Ghodsi, "Eventual consistency today: Limitations, extensions, and beyond," *Communications of the ACM*, vol. 56, n.º 5, pp. 55–63, 2013.
 
 [26] Amazon Web Services, "SaaS Tenant Isolation Strategies," AWS Whitepaper, 2020.
+
+[27] FinOps Foundation, "2025 FinOps Framework: Scopes and Cloud+," 2025. [En línea]. Disponible: https://www.finops.org/insights/2025-finops-framework/
+
+[28] FinOps Foundation, "State of FinOps 2026," Linux Foundation, comunicado del 19 de febrero de 2026 (1.192 encuestados). [En línea]. Disponible: https://www.linuxfoundation.org/press/state-of-finops-survey-ai-value-and-skills-top-priorities-as-finops-matures-across-technology-value-98-manage-ai-90-saas-64-licensing-48-data-center-1
+
+[29] FinOps Foundation, "State of FinOps 2025," 2025. [En línea]. Disponible: https://data.finops.org/2025-report/
+
+[30] FinOps Foundation, *FinOps Open Cost and Usage Specification (FOCUS)*, versión 1.2, 2025. [En línea]. Disponible: https://focus.finops.org/
+
+[31] Flexera, "2026 State of the Cloud Report," comunicado del 18 de marzo de 2026. [En línea]. Disponible: https://www.flexera.com/about-us/press-center/flexera-finds-cloud-value-is-rising-while-ai-waste-grows
+
+[32] Zylo, "2026 SaaS Management Index," comunicado del 29 de enero de 2026. [En línea]. Disponible: https://zylo.com/news/2026-saas-management-index
+
+[33] C+R Research, "Subscription service statistics and costs," encuesta a 1.000 consumidores de EE. UU., 2022. [En línea]. Disponible: https://crresearch.com/blog/subscription-service-statistics-and-costs/
+
+[34] *Information technology — IT asset management — Part 1: IT asset management systems — Requirements*, ISO/IEC 19770-1:2017, 2017.
+
+[35] R. H. Thaler, "Mental accounting matters," *Journal of Behavioral Decision Making*, vol. 12, n.º 3, pp. 183–206, 1999.
+
+[36] J. T. Gourville y D. Soman, "Payment depreciation: The behavioral effects of temporally separating payments from consumption," *Journal of Consumer Research*, vol. 25, n.º 2, pp. 160–174, 1998.
+
+[37] S. DellaVigna y U. Malmendier, "Paying not to go to the gym," *American Economic Review*, vol. 96, n.º 3, pp. 694–719, 2006.
+
+[38] Zylo, "2025 SaaS Management Index," comunicado del 16 de enero de 2025. [En línea]. Disponible: https://zylo.com/news/2025-saas-management-index
+
+[39] BerriAI, "LiteLLM — Spend tracking," documentación. [En línea]. Disponible: https://docs.litellm.ai/docs/proxy/cost_tracking

@@ -52,15 +52,22 @@ flowchart TB
       c41[Políticas y gobierno]
       c42[Educación y habilitación]
     end
+    subgraph C5 [Gestionar suscripciones y licencias]
+      c51[Inventario de licencias SaaS]
+      c52[Calendario de cobros y renovaciones]
+      c53[Reparto de cobros compartidos]
+      c54[Detección de duplicidades]
+    end
   end
   classDef poc fill:#2a78d6,color:#fff
   classDef future fill:#e2e1dc,color:#333
-  class c11,c12,c13,c21,c41 poc
-  class c22,c23,c31,c32,c42 future
+  class c11,c12,c13,c21,c41,c51,c52,c53 poc
+  class c22,c23,c31,c32,c42,c54 future
 ```
 
-Leyenda: en azul, las capacidades cubiertas por el PoC; en gris, la evolución futura. Los dominios corresponden a
-los del FinOps Framework de la FinOps Foundation.
+Leyenda: en azul, las capacidades cubiertas por el PoC; en gris, la evolución futura. Los dominios C1 a C4
+corresponden a los del FinOps Framework de la FinOps Foundation. C5 aplica esas capacidades a los *Scopes* de SaaS y
+licencias que el marco incorporó en 2025 (*Cloud+*) y, en el espacio Personal, al gasto de un hogar.
 
 ## 5.4 Cadena de valor: "del consumo a la decisión"
 

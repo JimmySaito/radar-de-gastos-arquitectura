@@ -13,6 +13,7 @@
 | [0009](0009-python-lambda-arm64-powertools.md) | Python 3.13 en Lambda arm64 con Powertools | Aceptada | Soportabilidad, Desempeño |
 | [0010](0010-ventana-movil-relectura.md) | Ventana móvil de relectura (*lookback*) | Aceptada | Confiabilidad, Costo |
 | [0011](0011-configuracion-autoservicio.md) | Configuración en autoservicio y separación datos reales / ejemplo | Aceptada | Usabilidad, Seguridad, Modificabilidad |
-| [0012](0012-consumo-con-suscripcion.md) | Consumo con suscripción (Claude Code local y costos fijos) | Aceptada | Interoperabilidad, Confiabilidad |
+| [0012](0012-consumo-con-suscripcion.md) | Consumo con suscripción (Claude Code local y costos fijos) | Aceptada (reemplazada en parte por 0013) | Interoperabilidad, Confiabilidad |
+| [0013](0013-espacios-empresa-personal.md) | Espacios Empresa y Personal con gastos recurrentes | Aceptada | Usabilidad, Seguridad, Modificabilidad |
 
 Plantilla: Contexto → Decisión → Alternativas consideradas → Consecuencias (+/−).

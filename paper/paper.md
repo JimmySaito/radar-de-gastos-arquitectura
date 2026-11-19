@@ -18,7 +18,7 @@ Amazon DynamoDB: combina claves naturales deterministas, transacciones atómicas
 para garantizar un efecto *exactamente-una-vez* sobre los agregados, aunque la mensajería entregue *al-menos-una-vez*
 y los proveedores revisen sus cifras durante horas. La solución se diseñó con arquitectura hexagonal, CQRS y un
 estilo serverless orientado a eventos en AWS, se documentó con el modelo C4 y ADR, y se alineó con TOGAF, COBIT 2019,
-ISO/IEC 38500 y el FinOps Framework. La evaluación combina 94 pruebas automatizadas (95,5 % de cobertura de ramas),
+ISO/IEC 38500 y el FinOps Framework. La evaluación combina 120 pruebas automatizadas (96,2 % de cobertura de ramas),
 pruebas basadas en propiedades y pruebas de estrés con inyección de 15 % de mensajes duplicados. En todos los
 escenarios medidos el costo agregado coincidió exactamente con el costo real, y la arquitectura cumplió por
 construcción los once atributos de calidad exigidos.
@@ -273,15 +273,25 @@ operar sin consola de AWS (ADR-0011):
 Las credenciales se custodian tras un puerto `SecretStore` (Secrets Manager en la nube, archivos fuera del
 repositorio en local) y nunca se devuelven al navegador.
 
+Finalmente, la aplicación distingue dos espacios (ADR-0013). En **Empresa** está el consumo descrito, más las
+**licencias SaaS** con número de usuarios. En **Personal**, cada persona registra sus suscripciones, sean de IA o
+no (streaming, música, software, almacenamiento), con monto, moneda, ciclo y fecha de cobro.
+
+Un módulo de dominio puro calcula el calendario de cobros desde una fecha ancla, sin acumular desfases, y ajusta
+al último día los meses más cortos. También calcula el equivalente mensual y un resumen agrupado por moneda: no
+convierte divisas para no introducir tipos de cambio no verificados. Con eso el panel muestra próximos cobros,
+calendario y proyección anual. Lo personal se indexa por el `sub` del token, así que ni otros miembros del tenant
+pueden leerlo.
+
 # 5. Resultados y evaluación
 
 ## 5.1 Verificación funcional y estática
 
 | Indicador | Resultado |
 |---|---|
-| Pruebas automatizadas | 94 (67 unitarias, 1 de propiedades × 150 ejemplos, 13 de integración con AWS emulado, 13 de handlers) |
-| Cobertura de ramas | 95,5 % (umbral: 80 %) |
-| Tipado estático | `mypy --strict`: 0 errores en 35 módulos |
+| Pruebas automatizadas | 120 (89 unitarias, 2 de propiedades, 14 de integración con AWS emulado, 15 de handlers) |
+| Cobertura de ramas | 96,2 % (umbral: 80 %) |
+| Tipado estático | `mypy --strict`: 0 errores en 38 módulos |
 | Lint y seguridad estática | `ruff` (incluye reglas de bandit): 0 hallazgos |
 | Tiempo de la suite | ≈ 11 s, sin cuenta de AWS |
 
@@ -336,7 +346,7 @@ hayan medido.
 | Interoperabilidad | Modelo canónico, OpenAPI 3.1, OAuth 2.0 | Ingesta *push* de extremo a extremo | **Verificado** |
 | Modificabilidad | Hexagonal, Strategy/Registry | Proveedor nuevo = 1 módulo + 1 registro | **Verificado** |
 | Mantenibilidad | Capas, tipado estricto, lint en CI | 0 hallazgos estáticos | **Verificado** |
-| Testabilidad | Puertos + dobles en memoria + moto | 95,5 % de cobertura sin AWS | **Verificado** |
+| Testabilidad | Puertos + dobles en memoria + moto | 96,2 % de cobertura sin AWS | **Verificado** |
 | Reusabilidad | Módulos Terraform y conectores desacoplados | `lambda_function` × 4 | **Verificado** |
 | Soportabilidad | Logs JSON, X-Ray, EMF, runbook, alarmas | Dashboard operativo en IaC | Por diseño |
 

@@ -4,14 +4,14 @@
 
 | Nivel | Herramientas | Qué valida | Cantidad |
 |---|---|---|---|
-| Unitarias | pytest | Modelo, ledger (deltas), servicios, conectores (incl. Claude Code local y suscripciones), catálogo, configuración de conexiones, persistencia local | 67 |
-| Propiedades | Hypothesis (150 ejemplos) | Invariante: los agregados convergen a la última versión con duplicados y revisiones arbitrarias | 1 (×150) |
-| Integración | moto (DynamoDB, SQS, SNS, Secrets Manager) | Transacciones, OCC con conflictos inyectados, paginación, consultas entre meses, custodia de secretos | 13 |
-| Handlers / contrato | Eventos reales de API Gateway v2 y SQS | Autorización, aislamiento de tenants, lote parcial, configuración de conexiones, vista de ejemplo | 13 |
+| Unitarias | pytest | Modelo, ledger (deltas), servicios, conectores (incl. Claude Code local), catálogo, configuración de conexiones, persistencia local, gastos recurrentes (calendario de cobros, equivalentes, resumen) | 89 |
+| Propiedades | Hypothesis | Los agregados convergen a la última versión con duplicados y revisiones arbitrarias; los cobros recurrentes son crecientes y caen dentro de la ventana para cualquier fecha y ciclo | 2 |
+| Integración | moto (DynamoDB, SQS, SNS, Secrets Manager) | Transacciones, OCC con conflictos inyectados, paginación, consultas entre meses, custodia de secretos, gastos recurrentes | 14 |
+| Handlers / contrato | Eventos reales de API Gateway v2 y SQS | Autorización, aislamiento de tenants, lote parcial, configuración de conexiones, vista de ejemplo, privacidad de suscripciones personales y permisos de licencias | 15 |
 | Estáticas | ruff, mypy --strict, bandit, checkov, terraform validate | Estilo, tipos, seguridad del código e IaC | CI |
 | Carga / estrés | k6 (AWS), `loadgen.py` (local y AWS) | Rendimiento, elasticidad, consistencia bajo duplicados | 4 escenarios |
 
-Cobertura de ramas: **95,5 %** (umbral de CI: 80 %). Tiempo de la suite: alrededor de 11 s, sin cuenta de AWS.
+Cobertura de ramas: **96,2 %** (umbral de CI: 80 %). Tiempo de la suite: alrededor de 11 s, sin cuenta de AWS.
 
 ## 8.2 Plan de pruebas de estrés
 

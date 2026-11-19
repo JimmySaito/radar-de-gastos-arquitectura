@@ -18,7 +18,7 @@ Amazon DynamoDB: combina claves naturales deterministas, transacciones atómicas
 para garantizar un efecto *exactamente-una-vez* sobre los agregados, aunque la mensajería entregue *al-menos-una-vez*
 y los proveedores revisen sus cifras durante horas. La solución se diseñó con arquitectura hexagonal, CQRS y un
 estilo serverless orientado a eventos en AWS, se documentó con el modelo C4 y ADR, y se alineó con TOGAF, COBIT 2019,
-ISO/IEC 38500 y el FinOps Framework. La evaluación combina 120 pruebas automatizadas (96,2 % de cobertura de ramas),
+ISO/IEC 38500 y el FinOps Framework. La evaluación combina 129 pruebas automatizadas (96,4 % de cobertura de ramas),
 pruebas basadas en propiedades y pruebas de estrés con inyección de 15 % de mensajes duplicados. En todos los
 escenarios medidos el costo agregado coincidió exactamente con el costo real, y la arquitectura cumplió por
 construcción los once atributos de calidad exigidos.
@@ -283,14 +283,20 @@ convierte divisas para no introducir tipos de cambio no verificados. Con eso el 
 calendario y proyección anual. Lo personal se indexa por el `sub` del token, así que ni otros miembros del tenant
 pueden leerlo.
 
+En el espacio personal se pueden crear **perfiles de personas** y asignar cada suscripción a una o varias
+(ADR-0014). Lo compartido se reparte con un algoritmo que distribuye los centavos sobrantes para que las partes
+sumen exactamente el cobro. La tarjeta "Gasto por persona" y el panel filtrado se derivan de la misma vista, lo
+que garantiza que muestren cifras idénticas. Un hogar de ejemplo generado al vuelo, con fechas relativas a hoy,
+permite explorar el panel sin datos propios.
+
 # 5. Resultados y evaluación
 
 ## 5.1 Verificación funcional y estática
 
 | Indicador | Resultado |
 |---|---|
-| Pruebas automatizadas | 120 (89 unitarias, 2 de propiedades, 14 de integración con AWS emulado, 15 de handlers) |
-| Cobertura de ramas | 96,2 % (umbral: 80 %) |
+| Pruebas automatizadas | 129 (95 unitarias, 2 de propiedades, 15 de integración con AWS emulado, 17 de handlers) |
+| Cobertura de ramas | 96,4 % (umbral: 80 %) |
 | Tipado estático | `mypy --strict`: 0 errores en 38 módulos |
 | Lint y seguridad estática | `ruff` (incluye reglas de bandit): 0 hallazgos |
 | Tiempo de la suite | ≈ 11 s, sin cuenta de AWS |
@@ -346,7 +352,7 @@ hayan medido.
 | Interoperabilidad | Modelo canónico, OpenAPI 3.1, OAuth 2.0 | Ingesta *push* de extremo a extremo | **Verificado** |
 | Modificabilidad | Hexagonal, Strategy/Registry | Proveedor nuevo = 1 módulo + 1 registro | **Verificado** |
 | Mantenibilidad | Capas, tipado estricto, lint en CI | 0 hallazgos estáticos | **Verificado** |
-| Testabilidad | Puertos + dobles en memoria + moto | 96,2 % de cobertura sin AWS | **Verificado** |
+| Testabilidad | Puertos + dobles en memoria + moto | 96,4 % de cobertura sin AWS | **Verificado** |
 | Reusabilidad | Módulos Terraform y conectores desacoplados | `lambda_function` × 4 | **Verificado** |
 | Soportabilidad | Logs JSON, X-Ray, EMF, runbook, alarmas | Dashboard operativo en IaC | Por diseño |
 

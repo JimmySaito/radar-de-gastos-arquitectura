@@ -15,5 +15,6 @@
 | [0011](0011-configuracion-autoservicio.md) | Configuración en autoservicio y separación datos reales / ejemplo | Aceptada | Usabilidad, Seguridad, Modificabilidad |
 | [0012](0012-consumo-con-suscripcion.md) | Consumo con suscripción (Claude Code local y costos fijos) | Aceptada (reemplazada en parte por 0013) | Interoperabilidad, Confiabilidad |
 | [0013](0013-espacios-empresa-personal.md) | Espacios Empresa y Personal con gastos recurrentes | Aceptada | Usabilidad, Seguridad, Modificabilidad |
+| [0014](0014-personas-y-ejemplo-personal.md) | Personas en el espacio personal y ejemplo generado al vuelo | Aceptada | Usabilidad, Confiabilidad |
 
 Plantilla: Contexto → Decisión → Alternativas consideradas → Consecuencias (+/−).

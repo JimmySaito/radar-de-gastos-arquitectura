@@ -75,7 +75,8 @@ con 6 decimales; `tenant_id` cumple `^[a-z0-9][a-z0-9-]{1,62}$`.
 | Conector | `CFG#CONNECTOR` | `{tenant}#{connector_id}` | `config` (sin secretos) |
 | Presupuesto | `T#{tenant}#BUDGET` | `{team}#{provider|*}` | `budget` |
 | Alerta enviada | `T#{tenant}#ALERT` | `{yyyy-mm}#{team}#{provider}#{umbral}` | — (marcador idempotente) |
-| Gasto recurrente | `O#{dueño}#RECUR` (dueño = `user:{sub}` o `tenant:{id}`) | `{expense_id}` | servicio, categoría, monto, moneda, ciclo, fecha de cobro, usuarios |
+| Gasto recurrente | `O#{dueño}#RECUR` (dueño = `user:{sub}` o `tenant:{id}`) | `{expense_id}` | servicio, categoría, monto, moneda, ciclo, fecha de cobro, usuarios, personas (`member_ids`) |
+| Persona (personal) | `O#user:{sub}#PEOPLE` | `{profile_id}` | nombre, relación |
 
 ## 7.4 Patrones de acceso
 

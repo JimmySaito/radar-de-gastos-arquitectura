@@ -60,7 +60,7 @@ Datos crudos: `usage-hub/docs/results/local-*.json`.
 
 ```bash
 make deploy
-TOKEN=$(curl -s -u "$CLIENT_ID:$CLIENT_SECRET" -d grant_type=client_credentials -d scope=usagehub/ingest \
+TOKEN=$(curl -s -u "$CLIENT_ID:$CLIENT_SECRET" -d grant_type=client_credentials -d scope=radar-gastos/ingest \
         "$COGNITO_DOMAIN/oauth2/token" | jq -r .access_token)
 for s in load stress spike; do
   k6 run -e BASE_URL=$API -e TOKEN=$TOKEN -e SCENARIO=$s --summary-export=results/aws-$s.json tests/load/k6_ingest.js

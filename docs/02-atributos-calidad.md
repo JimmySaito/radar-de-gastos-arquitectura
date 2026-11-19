@@ -118,7 +118,7 @@ optimista (ADR-0004). **Evidencia:** `domain/ledger.py`, `adapters/dynamodb.py`,
 **Evidencia:** `handlers/api.py::current_caller`, `test_tenant_isolation`.
 
 ### QAS-SE2 — Seguridad: custodia de credenciales
-Las llaves Admin viven en Secrets Manager (KMS). IAM limita el acceso a `secret:usagehub/*` solo para el
+Las llaves Admin viven en Secrets Manager (KMS). IAM limita el acceso a `secret:radar-gastos/*` solo para el
 colector, y AWS se lee mediante AssumeRole con ExternalId. **Medida:** 0 secretos en código, variables de
 entorno o logs (gitleaks en pre-commit).
 
@@ -129,7 +129,7 @@ entorno o logs (gitleaks en pre-commit).
 | Estímulo | Necesita reportar consumo |
 | Artefacto | API de ingesta |
 | Respuesta | Integra con HTTP + OAuth2 estándar usando el contrato OpenAPI publicado |
-| Medida | Integración sin cambios en UsageHub; contrato versionado (`/v1`) |
+| Medida | Integración sin cambios en Radar de gastos; contrato versionado (`/v1`) |
 
 **Evidencia:** `docs/openapi.yaml`, modelo canónico `UsageRecord`.
 

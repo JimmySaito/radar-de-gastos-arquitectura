@@ -15,8 +15,8 @@ sola verdad del consumo").
 3. **Formulario dirigido por catálogo:** `GET /v1/providers` describe los campos de cada proveedor (etiqueta, tipo,
    obligatoriedad, si es secreto, ayuda). La UI se genera a partir de él, así que un proveedor nuevo no toca el frontend (QAS-M1).
 4. **Custodia de credenciales detrás de un puerto `SecretStore`:** en AWS, Secrets Manager con el nombre
-   `usagehub/{tenant}/{conexión}` (IAM restringido a ese prefijo y borrado con ventana de recuperación de 7 días);
-   en local, archivos en `~/.usagehub` fuera del repositorio. **Los valores secretos nunca se devuelven**: la UI
+   `radar-gastos/{tenant}/{conexión}` (IAM restringido a ese prefijo y borrado con ventana de recuperación de 7 días);
+   en local, archivos en `~/.radar-gastos` fuera del repositorio. **Los valores secretos nunca se devuelven**: la UI
    solo sabe qué campos están definidos y un campo vacío conserva el valor guardado.
 5. **"Probar conexión" sin efectos:** lee los últimos 3 días del proveedor sin escribir en el ledger. Los errores
    se depuran (se enmascaran las credenciales y se acota el largo) antes de mostrarse.

@@ -9,7 +9,7 @@ flowchart TB
   admin([Administrador del tenant]):::person
   ext[Sistemas internos<br/>LLM propio, SaaS, scripts]:::ext
 
-  hub[[UsageHub<br/>Observabilidad de consumo<br/>IA + nube]]:::system
+  hub[[Radar de gastos<br/>Observabilidad de consumo<br/>IA + nube]]:::system
 
   anth[Anthropic<br/>Usage & Cost Analytics API]:::ext
   oai[OpenAI<br/>Organization Usage/Costs API]:::ext
@@ -133,7 +133,7 @@ flowchart TB
     CW[CloudWatch / X-Ray / SNS]
   end
   subgraph Payer [Cuenta payer de AWS Organizations]
-    R[IAM role usagehub-cost-reader<br/>ExternalId]
+    R[IAM role radar-gastos-cost-reader<br/>ExternalId]
     CE[Cost Explorer]
   end
   CF --> S3

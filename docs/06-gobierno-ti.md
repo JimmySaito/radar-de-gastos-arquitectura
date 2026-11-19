@@ -1,11 +1,11 @@
 # 6. Gobierno de TI
 
-UsageHub es a la vez un **producto que habilita gobierno** (de costos de IA y nube) y un **sistema que debe ser
+Radar de gastos es a la vez un **producto que habilita gobierno** (de costos de IA y nube) y un **sistema que debe ser
 gobernado**. Este documento cubre ambas dimensiones con COBIT 2019, el FinOps Framework e ISO/IEC 38500.
 
 ## 6.1 Alineación con COBIT 2019
 
-| Objetivo COBIT | Cómo lo soporta UsageHub | Evidencia |
+| Objetivo COBIT | Cómo lo soporta Radar de gastos | Evidencia |
 |---|---|---|
 | **EDM02** Asegurar la entrega de beneficios | Visibilidad del costo por equipo como insumo para evaluar el valor de las iniciativas de IA | Dashboard, `top_teams` |
 | **EDM04** Asegurar la optimización de recursos | Identifica concentración de gasto por modelo y proveedor | `top_services`, series |
@@ -45,8 +45,8 @@ gobernado**. Este documento cubre ambas dimensiones con COBIT 2019, el FinOps Fr
 | Cobertura de atribución | costo con `team ≠ unassigned` / costo total | ≥ 95 % | agregados `team` |
 | Desvío presupuestario | gasto del mes / presupuesto | ≤ 100 % | `GET /v1/budgets` |
 | Frescura de datos | ahora − último dato completo por proveedor | ≤ 24 h | `QueueToLedgerLatency` + latencia del proveedor |
-| Costo de la plataforma | costo AWS de UsageHub / gasto observado | < 1 % | `default_tags` (autoobservación) |
-| Exactitud | Δ entre UsageHub y la factura del proveedor al cierre | < 0,5 % | conciliación mensual |
+| Costo de la plataforma | costo AWS de Radar de gastos / gasto observado | < 1 % | `default_tags` (autoobservación) |
+| Exactitud | Δ entre Radar de gastos y la factura del proveedor al cierre | < 0,5 % | conciliación mensual |
 
 ## 6.5 RACI
 

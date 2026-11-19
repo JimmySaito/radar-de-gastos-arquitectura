@@ -1,5 +1,5 @@
 ---
-title: "UsageHub: arquitectura serverless con un ledger idempotente para el gobierno centralizado del consumo de servicios de IA y nube"
+title: "Radar de gastos: arquitectura serverless con un ledger idempotente para el gobierno centralizado del consumo de servicios de IA y nube"
 author:
   - "[Nombre del autor 1] — [Programa / Universidad]"
   - "[Nombre del autor 2] — [Programa / Universidad]"
@@ -11,7 +11,7 @@ lang: es
 
 Las organizaciones consumen hoy, en paralelo, modelos de lenguaje de varios proveedores (Anthropic, OpenAI, Google)
 y servicios de nube (AWS). Cada proveedor reporta el consumo con unidades, identidades y latencias distintas, lo que
-impide responder con oportunidad cuánto se gasta, en qué y quién lo consume. Este trabajo presenta **UsageHub**, una
+impide responder con oportunidad cuánto se gasta, en qué y quién lo consume. Este trabajo presenta **Radar de gastos**, una
 plataforma FinOps que centraliza esos datos en un modelo canónico, atribuye cada costo a una persona y a un equipo, y
 habilita presupuestos con alertas. La contribución técnica central es un **ledger idempotente basado en deltas** sobre
 Amazon DynamoDB: combina claves naturales deterministas, transacciones atómicas y control de concurrencia optimista
@@ -28,7 +28,7 @@ construcción los once atributos de calidad exigidos.
 # Abstract
 
 Organizations increasingly consume large language models from several vendors alongside cloud services, each
-reporting usage with different units, identities and delays. We present UsageHub, a FinOps platform that consolidates
+reporting usage with different units, identities and delays. We present Radar de gastos, a FinOps platform that consolidates
 this data into a canonical model, attributes cost to people and teams, and enforces budgets. Its core is an idempotent,
 delta-based ledger on Amazon DynamoDB that guarantees exactly-once effects on aggregates despite at-least-once
 delivery and provider-side revisions, using deterministic natural keys, atomic transactions and optimistic concurrency

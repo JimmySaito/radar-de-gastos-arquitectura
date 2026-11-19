@@ -1,7 +1,7 @@
-# UsageHub — Repositorio de arquitectura
+# Radar de gastos — Repositorio de arquitectura
 
 Artefactos de **Arquitectura de Software**, **Arquitectura Empresarial** y **Gobierno de TI** de
-UsageHub, una plataforma FinOps que centraliza el consumo de proveedores de IA (Anthropic/Claude,
+Radar de gastos, una plataforma FinOps que centraliza el consumo de proveedores de IA (Anthropic/Claude,
 OpenAI, Google Gemini) y de nube (AWS) con atribución por persona y equipo.
 
 El código del prototipo vive en el repositorio [`usage-hub`](../usage-hub).

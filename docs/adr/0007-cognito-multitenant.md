@@ -9,7 +9,7 @@ clientes) comparten la plataforma. La amenaza principal es el acceso cruzado ent
 ## Decisión
 - **Amazon Cognito**. Para personas: Authorization Code + **PKCE** (cliente público, sin secreto en el navegador),
   MFA TOTP opcional y alta solo por administradores. Para sistemas: **client credentials** con el scope
-  `usagehub/ingest`.
+  `radar-gastos/ingest`.
 - El atributo inmutable `custom:tenant_id` va en el id token. Para clientes M2M, la relación `client_id → tenant`
   es configuración del despliegue.
 - El autorizador JWT de API Gateway valida firma, emisor, audiencia y expiración antes de invocar Lambda.

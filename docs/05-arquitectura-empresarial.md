@@ -85,7 +85,7 @@ flowchart TB
     as2{{Servicio de aplicación: Ingesta de consumo}}
     as3{{Servicio de aplicación: Alertas de presupuesto}}
     ac1[Componente: Dashboard SPA]
-    ac2[Componente: API UsageHub]
+    ac2[Componente: API Radar de gastos]
     ac3[Componente: Colector]
     do1[(Objeto de datos: UsageRecord)]
   end

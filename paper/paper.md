@@ -14,7 +14,7 @@ servicios de inteligencia artificial y de nube, que se cobra según el uso, o la
 como licencias de software, herramientas de IA, plataformas de video o almacenamiento. Cada proveedor informa a su
 manera, con unidades, monedas y fechas de cobro distintas, de modo que nadie puede responder a tiempo cuánto se gasta,
 en qué, quién lo gasta y cuándo llega el próximo cobro. Este trabajo presenta **Radar de gastos**, una plataforma que
-reúne ambos caminos en una sola vista, con un espacio denominado **Empresa**, que asigna el gasto a personas y equipos
+reúne ambos tipos de gasto en una sola vista, con un espacio denominado **Empresa**, que asigna el gasto a personas y equipos
 y controla presupuestos y licencias, y un espacio **Personal**, que anticipa los cobros de un hogar y reparte las
 suscripciones compartidas. La idea inicial era medir solo el consumo de IA y nube, pero al probarla con usuarios se
 amplió a todas las suscripciones. Ese mismo cambio lo hizo **FinOps**, la práctica con la que las empresas reúnen a

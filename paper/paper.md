@@ -530,8 +530,9 @@ hecho, de modo que revisiones y reatribuciones siguen tocando las mismas celdas,
 Los conflictos bajaron entre 69 y 86 %, la cola dejó de acumular trabajo, los datos se reflejaron en 10 a 17 s en
 lugar de 7 a 8 minutos, desaparecieron los errores y el costo coincidió al centavo dentro de la propia verificación.
 El ledger pasó de unos 100 a unos 245 registros/s en el pico. Las lecturas no mejoraron en el p95, porque el top de
-personas siguió recorriendo todas sus celdas; se separó en su propia ruta, corrección que no alcanzó a medirse en la
-nube.
+personas siguió recorriendo todas sus celdas; se separó en su propia ruta. Esa corrección no alcanzó a medirse en la
+nube; en local, el resumen pasó a leer 6 celdas con cualquier número de personas (antes, 60.006 con 60.000 personas),
+y el coste lineal quedó aislado en la petición del top de personas, que el dashboard carga sin bloquearse.
 
 **Incidente.** Al terminar la segunda corrida, AWS Academy desactivó la cuenta del laboratorio: el entorno permite
 como máximo 10 ejecuciones concurrentes de Lambda y la prueba llegó a 64 en la API y 20 en el colector. Se había verificado el límite técnico de la

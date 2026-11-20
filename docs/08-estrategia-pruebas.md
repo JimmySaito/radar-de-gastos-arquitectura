@@ -164,3 +164,23 @@ exceso se rechaza en lugar de superar el límite, y `scripts/stress_aws.py` se n
 Learner Lab sin `--allow-lab`. La lección es de gobierno de TI: las cuotas de la plataforma son un requisito no
 funcional del despliegue y deben estar en la infraestructura como código, no solo en la documentación.
 
+### 8.4.3 Corrección de las lecturas, medida en local
+
+La separación del top de personas (`/v1/summary/members`) no alcanzó a desplegarse antes de la desactivación del
+laboratorio, y el segundo laboratorio disponible no permite crear Lambda, DynamoDB, SQS, API Gateway ni Cognito. Se
+midió en local con `scripts/bench_reads.py`, que reproduce la cardinalidad del generador de carga (un principal
+distinto por registro) y cuenta las celdas agregadas que lee cada petición (`docs/results/local-lecturas.json`):
+
+| Personas | Antes: una petición (celdas · ms) | Resumen ahora | Top de personas, aparte |
+|---|---|---|---|
+| 1.000 | 1.006 · 3 | **6** · 0,2 | 1.000 · 3 |
+| 10.000 | 10.006 · 39 | **6** · 2 | 10.000 · 37 |
+| 30.000 | 30.006 · 217 | **6** · 11 | 30.000 · 206 |
+| 60.000 | 60.006 · 460 | **6** · 31 | 60.000 · 429 |
+
+El resumen lee un número constante de celdas, independiente de la cardinalidad; el coste lineal queda aislado en la
+petición del top de personas, que el dashboard carga en paralelo sin bloquear el resto. El tiempo residual del resumen
+en local se debe a que el repositorio en memoria recorre todas las celdas para filtrar por dimensión; en DynamoDB cada
+dimensión es una partición propia y la lectura se limita a esas celdas. La latencia en la nube con esta corrección
+queda pendiente de medir.
+

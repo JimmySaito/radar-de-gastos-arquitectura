@@ -21,10 +21,10 @@ Amazon DynamoDB: combina claves naturales deterministas, transacciones atómicas
 para garantizar un efecto *exactamente-una-vez* sobre los agregados, aunque la mensajería entregue *al-menos-una-vez*
 y los proveedores revisen sus cifras durante horas. La solución se diseñó con arquitectura hexagonal, CQRS y un
 estilo serverless orientado a eventos en AWS, se documentó con el modelo C4 y ADR, y se alineó con TOGAF, COBIT 2019,
-ISO/IEC 38500 y el FinOps Framework. La evaluación combina 144 pruebas automatizadas (96,4 % de cobertura),
-pruebas basadas en propiedades, pruebas de estrés con inyección de 15 % de mensajes duplicados y una caída
-controlada del despliegue en AWS. En todos los escenarios medidos el costo agregado coincidió exactamente con el
-costo real; tras la caída los datos quedaron intactos y el servicio se recuperó sin intervención, y la prueba reveló
+ISO/IEC 38500 y el FinOps Framework. La evaluación combina 153 pruebas automatizadas (96,5 % de cobertura),
+pruebas basadas en propiedades, pruebas de estrés locales y en AWS con inyección de 15 % de mensajes duplicados y
+una caída controlada del despliegue en AWS. En todos los escenarios medidos, también en la nube con el ledger
+saturado, el costo agregado coincidió exactamente con el costo real; tras la caída los datos quedaron intactos y el servicio se recuperó sin intervención, y la prueba reveló
 cuatro debilidades de observabilidad que se corrigieron.
 
 **Palabras clave:** FinOps, gobierno de TI, gestión de suscripciones, SaaS, arquitectura serverless, idempotencia, CQRS, arquitectura hexagonal, AWS, IA generativa.
@@ -452,8 +452,8 @@ permite explorar el panel sin datos propios.
 
 | Indicador | Resultado |
 |---|---|
-| Pruebas automatizadas | 144 (99 unitarias, 2 de propiedades, 15 de integración con AWS emulado, 28 de handlers) |
-| Cobertura (líneas y ramas) | 96,4 % (umbral: 80 %) |
+| Pruebas automatizadas | 153 (107 unitarias, 2 de propiedades, 15 de integración con AWS emulado, 29 de handlers) |
+| Cobertura (líneas y ramas) | 96,5 % (umbral: 80 %) |
 | Tipado estático | `mypy --strict`: 0 errores en 38 módulos |
 | Lint y seguridad estática | `ruff` y `bandit`: 0 hallazgos; `pip-audit`: 0 vulnerabilidades conocidas |
 | Seguridad de la infraestructura | Checkov: 291 controles aprobados, 0 fallidos, 24 excepciones justificadas |
@@ -496,11 +496,34 @@ así, el experimento aporta un resultado útil para la arquitectura: la **consul
 en CPU** (tres consultas de agregados más ordenamientos, con p99 superior a 5 s bajo saturación). Esto respalda la
 decisión de precalcular agregados (CQRS) y señala la caché de lectura como la siguiente optimización.
 
-**Pruebas en AWS.** El protocolo para la nube (k6 con escenarios *load*, *stress*, *spike* y *soak*, más la
-verificación de consistencia de `loadgen.py`) está automatizado en el repositorio, con criterios de aceptación
-explícitos (p95 de ingesta < 500 ms, errores < 1 %, DLQ = 0, *backlog* drenado en < 15 min). Sus resultados deben
-incorporarse al ejecutarlo en la cuenta de AWS del equipo. Este artículo no reporta cifras de la nube que no se
-hayan medido.
+**Pruebas de estrés en AWS.** Los mismos tres perfiles se ejecutaron contra el despliegue en AWS Academy Learner
+Lab, con carga mixta, 15 % de lotes duplicados y métricas del servidor leídas de CloudWatch (detalle en
+`docs/08-estrategia-pruebas.md`, sección 8.4). La carga se redujo a 20 req/s base y 2 minutos por escenario para no
+agotar el crédito del laboratorio.
+
+| Escenario | Peticiones | Registros/s | Lotes duplicados | Ingesta p50 / p95 (ms) | Lectura p50 / p95 (ms) | Errores | Conflictos OCC | DLQ | Esperado = observado (USD) |
+|---|---|---|---|---|---|---|---|---|---|
+| Load | 2.400 | 213,3 | 170 | 130 / 199 | 1.027 / 1.953 | 0 % | 24.262 | 0 | 648.727,51 = 648.727,51 |
+| Stress | 2.014 | 147,2 | 158 | 129 / 346 | 4.780 / 10.113 | 0,05 % | 16.188 | 0 | 525.235,32 = 525.235,32 |
+| Spike | 1.051 | 90,4 | 76 | 132 / 481 | 5.082 / 12.032 | 0,19 % | 8.137 | 0 | 279.914,39 = 279.914,39 |
+
+**Exactitud en la nube.** Con 404 lotes duplicados y 48.587 reintentos por conflicto, el costo agregado coincidió
+al centavo con la suma de los registros únicos en las tres corridas, una vez procesada la cola. Es la confirmación
+en AWS del escenario QAS-R1.
+
+**Ingesta.** El 100 % de los lotes fue aceptado, con p95 entre 199 y 481 ms (objetivo: 500 ms) y sin mensajes en la
+DLQ ni *throttling* de DynamoDB.
+
+**Cuello de botella de escritura.** Los colectores llegaron a su concurrencia máxima (20) y se serializaron en las
+celdas agregadas compartidas por todos los registros de una corrida: la capacidad efectiva del ledger fue de unos
+100 registros/s, la cola acumuló hasta 390 mensajes y los datos tardaron minutos en reflejarse. Es el punto de
+sensibilidad S1 anticipado en el diseño, ahora cuantificado: el control de concurrencia optimista preserva la
+exactitud a costa de la frescura, y el *sharding* de celdas calientes (ADR-0004) es la siguiente mejora.
+
+**Lecturas.** El resumen tuvo p95 de 2 a 12 s porque recorre todas las celdas del agregado por persona del rango:
+el generador usa un principal distinto por registro y el tenant de carga acumuló 29.150. Aunque esa cardinalidad
+exagera el caso real, el costo lineal es un defecto de diseño que la prueba local no podía revelar. La alarma de
+latencia lo detectó, pero osciló entre ALARM y OK por falta de histéresis.
 
 **Caída controlada en AWS.** El prototipo se desplegó en AWS Academy Learner Lab, que no permite crear roles IAM
 ni usar CloudFront o X-Ray: las funciones usan el rol del laboratorio y la propia API sirve el dashboard por HTTPS.
@@ -534,13 +557,13 @@ el entorno local adoptó la misma política.
 |---|---|---|---|
 | Confiabilidad | Ledger con deltas, transacciones, OCC | Pruebas de propiedades y de estrés con duplicados | **Verificado** |
 | Disponibilidad | Cola + DLQ, lote parcial, servicios multi-AZ, chequeo `/v1/ready`, 503 con `Retry-After` | Aislamiento de fallas por mensaje; caída controlada en AWS (recuperación automática, datos intactos) | Verificado; SLO bajo carga por medir |
-| Desempeño | Asincronía, CQRS, particiones mensuales | Medición local; umbrales k6 definidos | Parcial (pendiente en AWS) |
-| Escalabilidad | Lambda + SQS + DynamoDB *on-demand*, concurrencia acotada | Escenarios *stress*/*spike* definidos | Por diseño; pendiente en AWS |
+| Desempeño | Asincronía, CQRS, particiones mensuales | AWS: ingesta p95 199-481 ms; lecturas p95 2-12 s por la cardinalidad del agregado por persona | Ingesta verificada; lecturas por mejorar |
+| Escalabilidad | Lambda + SQS + DynamoDB *on-demand*, concurrencia acotada | AWS: la cola absorbió los picos sin pérdidas ni DLQ; el ledger se limitó a ≈ 100 registros/s por celdas calientes | Verificado, con límite cuantificado |
 | Seguridad | JWT, tenant desde la claim, mínimo privilegio, cifrado con CMK | `test_tenant_isolation`, modelo STRIDE, Checkov sin fallos | **Verificado** |
 | Interoperabilidad | Modelo canónico, OpenAPI 3.1, OAuth 2.0 | Ingesta *push* de extremo a extremo | **Verificado** |
 | Modificabilidad | Hexagonal, Strategy/Registry | Proveedor nuevo = 1 módulo + 1 registro; ampliación del alcance sin modificar el ledger | **Verificado** |
 | Mantenibilidad | Capas, tipado estricto, lint en CI | 0 hallazgos estáticos | **Verificado** |
-| Testabilidad | Puertos + dobles en memoria + moto | 96,4 % de cobertura sin AWS | **Verificado** |
+| Testabilidad | Puertos + dobles en memoria + moto | 96,5 % de cobertura sin AWS | **Verificado** |
 | Reusabilidad | Módulos Terraform y conectores desacoplados | `lambda_function` × 4 | **Verificado** |
 | Soportabilidad | Logs JSON, X-Ray, EMF, runbook, alarmas | Caída en AWS: detección en ≈ 1 min y causa identificada en los logs de acceso | Verificado, con mejoras aplicadas |
 
@@ -566,17 +589,18 @@ el entorno local adoptó la misma política.
    (2× WCU), el precio de lecturas rápidas.
 3. **Atribución en OpenAI:** el costo por persona no está disponible en la fuente y debe estimarse.
 4. **Montos antes de créditos e impuestos:** se requiere conciliación con la factura para el cierre contable.
-5. **Validación en la nube parcial:** la disponibilidad y la recuperación se midieron con una caída controlada en
-   AWS, pero el rendimiento y la elasticidad bajo carga aún deben medirse con el protocolo provisto, y las
-   correcciones derivadas de la caída deben verificarse repitiendo la prueba.
-6. **Aislamiento lógico:** el modelo *pool* de tabla compartida puede no bastar para clientes regulados [26].
-7. **Suscripciones registradas a mano:** a diferencia de las aplicaciones de finanzas personales, el prototipo no
+5. **Validación en la nube acotada:** las pruebas de estrés en AWS usaron una carga reducida (20 req/s base, 2
+   minutos por escenario) por el crédito del laboratorio, y no se ejecutó la prueba de larga duración (*soak*).
+6. **Lecturas sensibles a la cardinalidad:** el resumen recorre todas las celdas del agregado por persona; con
+   miles de identidades distintas su latencia crece linealmente (medido en AWS).
+7. **Aislamiento lógico:** el modelo *pool* de tabla compartida puede no bastar para clientes regulados [26].
+8. **Suscripciones registradas a mano:** a diferencia de las aplicaciones de finanzas personales, el prototipo no
    detecta cobros en cuentas bancarias o correos; su exactitud depende de que el usuario mantenga el registro al día.
-8. **Sin conversión de divisas:** los totales se presentan por moneda para no introducir tipos de cambio no
+9. **Sin conversión de divisas:** los totales se presentan por moneda para no introducir tipos de cambio no
    verificados, lo que impide una cifra única cuando se paga en varias monedas.
-9. **Consumo de los planes de suscripción:** los proveedores no exponen por API el uso de planes como claude.ai o
+10. **Consumo de los planes de suscripción:** los proveedores no exponen por API el uso de planes como claude.ai o
    ChatGPT Plus; solo se registra su precio fijo y, para Claude Code, una estimación a partir de los registros locales.
-10. **Evaluación con usuarios pendiente:** la utilidad del espacio personal para reducir gasto no se midió con un
+11. **Evaluación con usuarios pendiente:** la utilidad del espacio personal para reducir gasto no se midió con un
     estudio de usuarios.
 
 ## 5.6 Mejoras propuestas
@@ -613,7 +637,7 @@ traducen a capacidades verificables: KPIs calculados por el sistema, alertas ide
 una comodidad: es la única forma de ver el total, asignar responsables, anticipar cobros y detectar duplicidades
 entre fuentes.
 
-**Trabajo futuro.** Ejecutar y publicar el protocolo de estrés en AWS; repetir la caída controlada durante una recolección para ejercitar los reintentos y la DLQ; cuantificar la relación entre concurrencia y
+**Trabajo futuro.** Implementar el *sharding* de celdas calientes y un total diario de cardinalidad baja para el resumen, y repetir el protocolo de estrés con la carga completa y la prueba de larga duración; repetir la caída controlada durante una recolección para ejercitar los reintentos y la DLQ; cuantificar la relación entre concurrencia y
 conflictos OCC para dimensionar el *sharding* de agregados; incorporar pronóstico y detección de anomalías sobre el
 ledger; evaluar el modelo de aislamiento *silo* frente a *pool* para escenarios regulados; adoptar FOCUS como formato
 de intercambio; y medir con usuarios si la vista consolidada reduce el gasto no deseado.

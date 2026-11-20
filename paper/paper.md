@@ -525,6 +525,21 @@ el generador usa un principal distinto por registro y el tenant de carga acumul�
 exagera el caso real, el costo lineal es un defecto de diseño que la prueba local no podía revelar. La alarma de
 latencia lo detectó, pero osciló entre ALARM y OK por falta de histéresis.
 
+**Segunda corrida con *shards*.** Se repartió cada celda agregada en 8 *shards* elegidos por el identificador del
+hecho, de modo que revisiones y reatribuciones siguen tocando las mismas celdas, y se repitieron los tres escenarios.
+Los conflictos bajaron entre 69 y 86 %, la cola dejó de acumular trabajo, los datos se reflejaron en 10 a 17 s en
+lugar de 7 a 8 minutos, desaparecieron los errores y el costo coincidió al centavo dentro de la propia verificación.
+El ledger pasó de unos 100 a unos 245 registros/s en el pico. Las lecturas no mejoraron en el p95, porque el top de
+personas siguió recorriendo todas sus celdas; se separó en su propia ruta, corrección que no alcanzó a medirse en la
+nube.
+
+**Incidente.** Al terminar la segunda corrida, AWS Academy desactivó la cuenta del laboratorio: el entorno permite
+como máximo 10 ejecuciones concurrentes de Lambda y la prueba llegó a 64 en la API y 20 en el colector. Se había verificado el límite técnico de la
+cuenta, no la restricción documentada del laboratorio. El modo laboratorio de la infraestructura reserva ahora
+concurrencia por función (9 en total) para que el exceso se rechace en vez de superar el límite. El incidente ilustra
+un punto de gobierno de TI: las cuotas de la plataforma son requisitos no funcionales y deben vivir en la
+infraestructura como código.
+
 **Caída controlada en AWS.** El prototipo se desplegó en AWS Academy Learner Lab, que no permite crear roles IAM
 ni usar CloudFront o X-Ray: las funciones usan el rol del laboratorio y la propia API sirve el dashboard por HTTPS.
 Sobre ese despliegue se terminó la sesión del laboratorio para provocar una caída real y se midió el sistema desde
@@ -590,7 +605,8 @@ el entorno local adoptó la misma política.
 3. **Atribución en OpenAI:** el costo por persona no está disponible en la fuente y debe estimarse.
 4. **Montos antes de créditos e impuestos:** se requiere conciliación con la factura para el cierre contable.
 5. **Validación en la nube acotada:** las pruebas de estrés en AWS usaron una carga reducida (20 req/s base, 2
-   minutos por escenario) por el crédito del laboratorio, y no se ejecutó la prueba de larga duración (*soak*).
+   minutos por escenario), no se ejecutó la prueba de larga duración (*soak*), y la corrección de las lecturas no se
+   midió en la nube porque el laboratorio se desactivó al superar su límite de concurrencia de Lambda.
 6. **Lecturas sensibles a la cardinalidad:** el resumen recorre todas las celdas del agregado por persona; con
    miles de identidades distintas su latencia crece linealmente (medido en AWS).
 7. **Aislamiento lógico:** el modelo *pool* de tabla compartida puede no bastar para clientes regulados [26].

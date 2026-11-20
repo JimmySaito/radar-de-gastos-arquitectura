@@ -128,3 +128,39 @@ con `scripts/verify_load_runs.py`:
    ALARM y OK seis veces en media hora, porque evalúa 2 periodos de 5 minutos cada minuto y el periodo en curso,
    todavía incompleto, la devuelve a OK. Necesita histéresis (más periodos para volver a OK), como ya se hizo con la
    alarma de 5xx.
+
+### 8.4.1 Segunda corrida: celdas agregadas en *shards*
+
+Tras repartir cada celda agregada en 8 shards (ADR-0004), calcular el total del resumen desde la dimensión de
+equipos y agregar una caché de lecturas de 15 s, se repitieron los tres escenarios con los mismos parámetros
+(`docs/results/aws-*-sharding.json`):
+
+| Métrica | Load (antes → después) | Stress | Spike |
+|---|---|---|---|
+| Conflictos OCC | 24.262 → **4.553** | 16.188 → **5.088** | 8.137 → **1.104** |
+| Mensajes visibles en cola (máx.) | 340 → **0** | 390 → **0** | 87 → **0** |
+| Cola → ledger, p95 | 430 s → **17 s** | 470 s → **10 s** | 481 s → **12 s** |
+| Convergencia exacta | No en 300 s → **17 s** | No → **inmediata** | No → **inmediata** |
+| Errores | 0 % → 0 % | 0,05 % → **0 %** | 0,19 % → **0 %** |
+| Lotes que agotaron reintentos | 2 → **0** | 17 → **0** | 1 → **0** |
+| Lectura p50 / p95 (ms) | 1.027 / 1.953 → 847 / 8.055 | 4.780 / 10.113 → 924 / 12.437 | 5.082 / 12.032 → 1.597 / 17.024 |
+
+El cuello de escritura desapareció: el ledger alcanzó unos 245 registros/s en el pico (antes ≈ 100), la cola no
+acumuló trabajo y el costo coincidió al centavo dentro de la propia verificación. Las lecturas, en cambio, empeoraron
+en el p95: el top de personas siguió recorriendo todas sus celdas, que se duplicaron al sumarse las de la corrida
+anterior, y la caché por instancia no compensó con unas 60 instancias de la API arrancando en frío. Se corrigió
+separando el top de personas en su propia ruta (`/v1/summary/members`) para que el resumen solo lea dimensiones de
+cardinalidad baja; esa corrección no alcanzó a medirse en AWS (ver 8.4.2).
+
+### 8.4.2 Incidente: desactivación del laboratorio
+
+Al terminar la segunda corrida (02:27 UTC), AWS Academy desactivó la cuenta del laboratorio. Learner Lab permite como
+máximo **10 entornos de ejecución de Lambda concurrentes** y desactiva la cuenta al superarlos; ambas corridas lo
+superaron (API hasta 64 y colector hasta 20). El presupuesto no fue la causa (0 de 50 USD usados). Se había verificado
+el límite técnico de la cuenta (400) pero no la restricción documentada del laboratorio.
+
+Acciones: el modo laboratorio reserva concurrencia por función (API 4, colector 3, horarios 1 + 1 = 9), de modo que el
+exceso se rechaza en lugar de superar el límite, y `scripts/stress_aws.py` se niega a ejecutarse en una cuenta de
+Learner Lab sin `--allow-lab`. La lección es de gobierno de TI: las cuotas de la plataforma son un requisito no
+funcional del despliegue y deben estar en la infraestructura como código, no solo en la documentación.
+

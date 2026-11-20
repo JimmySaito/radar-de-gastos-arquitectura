@@ -83,10 +83,33 @@ siguiente experimento en la nube.
 | 5 | Sin logs de la función durante la caída | Pérdida de observabilidad justo en el incidente | Documentado en el runbook: revisar primero los logs de acceso de API Gateway. Recomendado para producción: registros que no dependan del rol de la aplicación |
 | 6 | Suscripción SNS sin confirmar | Las alarmas no llegan a nadie | Paso explícito en la guía de despliegue |
 
-Las acciones 1 a 4 están implementadas en el prototipo, con pruebas automatizadas (141 pruebas en total). Su
-comportamiento en AWS se verifica repitiendo esta prueba tras redesplegar.
+Las acciones 1 a 4 están implementadas en el prototipo, con pruebas automatizadas, y se verificaron en AWS
+repitiendo la prueba (sección 10.6).
 
-## 10.6 Conclusión
+## 10.6 Repetición tras las correcciones
+
+Se redesplegó el prototipo (2 recursos creados, 5 modificados, 1 reemplazado: la capa de dependencias) y se repitió
+la caída con una sonda continua sobre `/v1/ready` y `/v1/health` cada 10 s (`docs/results/aws-lab-caida2-sonda.jsonl`,
+134 mediciones).
+
+| Corrección | Resultado en AWS |
+|---|---|
+| 1. `/v1/ready` | 503 durante toda la caída y `/v1/health` 200 en las 67 mediciones: la sonda distingue vivacidad de disponibilidad. Último 503 a las 00:38:55, primer 200 a las 00:39:06 (recuperación fechada con 11 s de precisión) |
+| 2. Respuesta 503 | El dashboard mostró *"El servicio de datos no está disponible en este momento. Intenta de nuevo en unos minutos."* |
+| 3. Datos desactualizados | No verificable en AWS: la pestaña abierta conservaba el código anterior al redespliegue (hallazgo 7). Verificado en local con el código nuevo: aviso con la hora de la última consulta, rango correcto y datos atenuados |
+| 4. Alarma de 5xx | **ALARM** a las 00:35:12 (errores del 50 % en 00:33 y 00:34) y **OK** a las 00:43:12, unos 4 minutos después de la recuperación, por la ventana de 5 minutos; ambos avisos llegaron por correo con la suscripción ya confirmada |
+
+La repetición destapó dos hallazgos más:
+
+| # | Hallazgo | Acción |
+|---|---|---|
+| 7 | Una pestaña abierta antes del despliegue sigue ejecutando el código anterior hasta que se recarga | Documentado; la mejora natural es versionar los archivos estáticos para invalidarlos en cada despliegue |
+| 8 | En AWS las barras de "Gasto por persona" y los colores de avatares y categorías no se veían: la CSP (`style-src 'self'`) bloquea los atributos de estilo en línea, y en local no había CSP | Los estilos dinámicos se aplican desde JavaScript (permitido por la CSP) y los fijos pasaron a clases; el servidor local envía ahora la misma CSP que AWS, y una prueba automatizada impide reintroducir estilos o manejadores en línea. Verificado en AWS tras redesplegar: barras y colores visibles |
+
+El hallazgo 8 no estaba relacionado con la caída, pero lo reveló la misma sesión de uso real. Muestra el valor de que
+el entorno local reproduzca las políticas del de producción: la diferencia entre ambos ocultaba el defecto.
+
+## 10.7 Conclusión
 
 La arquitectura conservó la **integridad** y se **recuperó sola**, que eran las propiedades críticas para un
 sistema financiero. La prueba sí expuso debilidades de **observabilidad y experiencia de usuario** que las pruebas

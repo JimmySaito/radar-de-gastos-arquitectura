@@ -22,7 +22,7 @@ Amazon DynamoDB: combina claves naturales deterministas, transacciones atómicas
 para garantizar un efecto *exactamente-una-vez* sobre los agregados, aunque la mensajería entregue *al-menos-una-vez*
 y los proveedores revisen sus cifras durante horas. La solución se diseñó con arquitectura hexagonal, CQRS y un
 estilo serverless orientado a eventos en AWS, se documentó con el modelo C4 y ADR, y se alineó con TOGAF, COBIT 2019,
-ISO/IEC 38500 y el FinOps Framework. La evaluación combina 141 pruebas automatizadas (96,4 % de cobertura),
+ISO/IEC 38500 y el FinOps Framework. La evaluación combina 144 pruebas automatizadas (96,4 % de cobertura),
 pruebas basadas en propiedades, pruebas de estrés con inyección de 15 % de mensajes duplicados y una caída
 controlada del despliegue en AWS. En todos los escenarios medidos el costo agregado coincidió exactamente con el
 costo real; tras la caída los datos quedaron intactos y el servicio se recuperó sin intervención, y la prueba reveló
@@ -453,7 +453,7 @@ permite explorar el panel sin datos propios.
 
 | Indicador | Resultado |
 |---|---|
-| Pruebas automatizadas | 141 (96 unitarias, 2 de propiedades, 15 de integración con AWS emulado, 28 de handlers) |
+| Pruebas automatizadas | 144 (99 unitarias, 2 de propiedades, 15 de integración con AWS emulado, 28 de handlers) |
 | Cobertura (líneas y ramas) | 96,4 % (umbral: 80 %) |
 | Tipado estático | `mypy --strict`: 0 errores en 38 módulos |
 | Lint y seguridad estática | `ruff` y `bandit`: 0 hallazgos; `pip-audit`: 0 vulnerabilidades conocidas |
@@ -522,7 +522,12 @@ La prueba confirmó las propiedades críticas (integridad y recuperación) y exp
 pruebas locales no podían revelar: un chequeo de salud que respondía 200 sin poder leer la base de datos, un error
 500 sin significado para el usuario, un dashboard que mostraba datos de otro rango sin avisarlo, y una alarma de 5xx
 calibrada para tráfico alto. Las cuatro se corrigieron (chequeo `/v1/ready`, respuestas 503 con `Retry-After`, aviso
-de datos desactualizados y alarma de 2 de 5 minutos) y quedaron cubiertas por pruebas automatizadas.
+de datos desactualizados y alarma de 2 de 5 minutos) y quedaron cubiertas por pruebas automatizadas. Al
+repetir la caída tras redesplegar, `/v1/ready` respondió 503 mientras `/v1/health` seguía en 200, el usuario vio el
+mensaje de indisponibilidad en lugar del error genérico, y la alarma de 5xx pasó a ALARM en unos 2 minutos y volvió
+a OK unos 4 minutos después de la recuperación, con ambos avisos entregados por correo. La sesión reveló además que
+la CSP de producción bloqueaba estilos en línea del dashboard que en local, sin CSP, sí se aplicaban; se corrigió y
+el entorno local adoptó la misma política.
 
 ## 5.3 Evaluación por atributo de calidad
 

@@ -21,7 +21,7 @@ Amazon DynamoDB: combina claves naturales deterministas, transacciones atómicas
 para garantizar un efecto *exactamente-una-vez* sobre los agregados, aunque la mensajería entregue *al-menos-una-vez*
 y los proveedores revisen sus cifras durante horas. La solución se diseñó con arquitectura hexagonal, CQRS y un
 estilo serverless orientado a eventos en AWS, se documentó con el modelo C4 y ADR, y se alineó con TOGAF, COBIT 2019,
-ISO/IEC 38500 y el FinOps Framework. La evaluación combina 153 pruebas automatizadas (96,5 % de cobertura),
+ISO/IEC 38500 y el FinOps Framework. La evaluación combina 163 pruebas automatizadas (96,4 % de cobertura),
 pruebas basadas en propiedades, pruebas de estrés locales y en AWS con inyección de 15 % de mensajes duplicados y
 una caída controlada del despliegue en AWS. En todos los escenarios medidos, también en la nube con el ledger
 saturado, el costo agregado coincidió exactamente con el costo real; tras la caída los datos quedaron intactos y el servicio se recuperó sin intervención, y la prueba reveló
@@ -105,7 +105,7 @@ tecnológico recurrente —consumo variable de IA y nube más suscripciones de p
 los agregados bajo entrega duplicada, revisiones de los proveedores y escritura concurrente?** Las contribuciones son:
 
 1. Una arquitectura de referencia serverless en AWS para FinOps multiproveedor, documentada con el modelo C4,
-   catorce decisiones de arquitectura (ADR) y escenarios de calidad para once atributos.
+   dieciocho decisiones de arquitectura (ADR) y escenarios de calidad para once atributos.
 2. Un **algoritmo de ledger idempotente basado en deltas** con control de concurrencia optimista, separado como lógica
    de dominio pura y verificado con pruebas basadas en propiedades.
 3. Un **modelo de dominio de cobros recurrentes** que proyecta calendarios sin acumular desfases, reparte cobros
@@ -381,12 +381,18 @@ en la misma transacción, así que el modelo de lectura nunca diverge del ledger
 versión es cero, **reprocesar un mensaje es inocuo**, y eso hace seguros los reintentos de SQS, el *redrive* desde la
 DLQ y los *backfills*.
 
+Para que los colectores no compitan por las celdas más concurridas, cada celda agregada se reparte en *N* *shards*
+(ADR-0015). Un hecho escribe siempre en el mismo *shard*, derivado de su `record_id`, así que sus revisiones y
+reatribuciones restan y suman sobre las mismas celdas; la lectura suma los *shards*. El reparto vive en el adaptador:
+la función de deltas y sus pruebas de propiedades no cambian.
+
 ## 4.4 Modelo de datos
 
 Se usa una tabla única con claves compuestas. Los hechos se guardan en `T#{tenant}#F#{mes}` y los agregados en
 `T#{tenant}#A#{dimensión}#{mes}`, con `SK = fecha#proveedor#valor`. Una consulta de 90 días lee como máximo cuatro
 particiones por dimensión, sin importar el volumen de hechos. El particionamiento mensual acota el tamaño de las
-colecciones y distribuye la escritura.
+colecciones y distribuye la escritura. Como el costo de leer una dimensión crece con su cardinalidad, el resumen del
+dashboard solo lee las de cardinalidad baja (equipos y servicios), y el top de personas se pide aparte (ADR-0016).
 
 ## 4.5 Seguridad y multi-tenancy
 
@@ -408,7 +414,11 @@ de SLO (5xx > 1 %, p95 > 800 ms, DLQ > 0, edad de la cola > 15 min) completan la
 ejecuta formato, lint (incluido bandit), `mypy --strict`, pruebas con umbral de cobertura, `pip-audit`, `checkov` y
 `terraform validate`. Checkov actúa como barrera: un hallazgo nuevo detiene el pipeline, y cada excepción aceptada
 se justifica en el propio recurso. Un script reproduce el despliegue completo (empaquetado, Terraform, datos de
-ejemplo y alta del administrador), y el mismo código corre en local sin AWS como entorno de respaldo.
+ejemplo y alta del administrador). En una cuenta de AWS Academy activa un **modo laboratorio** (ADR-0017): las
+funciones usan el rol preparado del laboratorio, la API sirve el dashboard en lugar de CloudFront y la concurrencia
+reservada de Lambda respeta la cuota de la plataforma. El mismo código corre en local con la misma política de
+seguridad de contenido, sin dependencias externas en el navegador, como entorno de respaldo; un servicio de migración
+copia la configuración entre entornos sin exponer credenciales (ADR-0018).
 
 ## 4.7 Dashboard
 
@@ -452,8 +462,8 @@ permite explorar el panel sin datos propios.
 
 | Indicador | Resultado |
 |---|---|
-| Pruebas automatizadas | 153 (107 unitarias, 2 de propiedades, 15 de integración con AWS emulado, 29 de handlers) |
-| Cobertura (líneas y ramas) | 96,5 % (umbral: 80 %) |
+| Pruebas automatizadas | 163 (112 unitarias, 2 de propiedades, 19 de integración con AWS emulado, 30 de handlers) |
+| Cobertura (líneas y ramas) | 96,4 % (umbral: 80 %) |
 | Tipado estático | `mypy --strict`: 0 errores en 38 módulos |
 | Lint y seguridad estática | `ruff` y `bandit`: 0 hallazgos; `pip-audit`: 0 vulnerabilidades conocidas |
 | Seguridad de la infraestructura | Checkov: 291 controles aprobados, 0 fallidos, 24 excepciones justificadas |
@@ -579,7 +589,7 @@ el entorno local adoptó la misma política.
 | Interoperabilidad | Modelo canónico, OpenAPI 3.1, OAuth 2.0 | Ingesta *push* de extremo a extremo | **Verificado** |
 | Modificabilidad | Hexagonal, Strategy/Registry | Proveedor nuevo = 1 módulo + 1 registro; ampliación del alcance sin modificar el ledger | **Verificado** |
 | Mantenibilidad | Capas, tipado estricto, lint en CI | 0 hallazgos estáticos | **Verificado** |
-| Testabilidad | Puertos + dobles en memoria + moto | 96,5 % de cobertura sin AWS | **Verificado** |
+| Testabilidad | Puertos + dobles en memoria + moto | 96,4 % de cobertura sin AWS | **Verificado** |
 | Reusabilidad | Módulos Terraform y conectores desacoplados | `lambda_function` × 4 | **Verificado** |
 | Soportabilidad | Logs JSON, X-Ray, EMF, runbook, alarmas | Caída en AWS: detección en ≈ 1 min y causa identificada en los logs de acceso | Verificado, con mejoras aplicadas |
 

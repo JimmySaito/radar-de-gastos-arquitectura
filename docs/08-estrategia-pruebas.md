@@ -11,7 +11,7 @@
 | Estáticas | ruff, mypy --strict, bandit, checkov, terraform validate | Estilo, tipos, seguridad del código e IaC | CI |
 | Carga / estrés | k6 (AWS), `loadgen.py` (local y AWS) | Rendimiento, elasticidad, consistencia bajo duplicados | 4 escenarios |
 
-Cobertura (líneas y ramas): **96,5 %** con 153 pruebas (umbral de CI: 80 %). Tiempo de la suite: alrededor de 11 s, sin cuenta de AWS.
+Cobertura (líneas y ramas): **96,4 %** con 163 pruebas (umbral de CI: 80 %). Tiempo de la suite: alrededor de 11 s, sin cuenta de AWS.
 
 ## 8.2 Plan de pruebas de estrés
 
@@ -131,7 +131,7 @@ con `scripts/verify_load_runs.py`:
 
 ### 8.4.1 Segunda corrida: celdas agregadas en *shards*
 
-Tras repartir cada celda agregada en 8 shards (ADR-0004), calcular el total del resumen desde la dimensión de
+Tras repartir cada celda agregada en 8 shards (ADR-0015), calcular el total del resumen desde la dimensión de
 equipos y agregar una caché de lecturas de 15 s, se repitieron los tres escenarios con los mismos parámetros
 (`docs/results/aws-*-sharding.json`):
 

@@ -16,5 +16,9 @@
 | [0012](0012-consumo-con-suscripcion.md) | Consumo con suscripción (Claude Code local y costos fijos) | Aceptada (reemplazada en parte por 0013) | Interoperabilidad, Confiabilidad |
 | [0013](0013-espacios-empresa-personal.md) | Espacios Empresa y Personal con gastos recurrentes | Aceptada | Usabilidad, Seguridad, Modificabilidad |
 | [0014](0014-personas-y-ejemplo-personal.md) | Personas en el espacio personal y ejemplo generado al vuelo | Aceptada | Usabilidad, Confiabilidad |
+| [0015](0015-shards-celdas-agregadas.md) | Celdas agregadas repartidas en *shards* | Aceptada (implementa la evolución de 0004) | Escalabilidad, Confiabilidad |
+| [0016](0016-lecturas-cardinalidad-acotada.md) | Lecturas del dashboard con cardinalidad acotada | Aceptada | Desempeño, Escalabilidad |
+| [0017](0017-modo-laboratorio-y-cuotas.md) | Modo laboratorio y cuotas de la plataforma como código | Aceptada | Disponibilidad, Seguridad, Gobierno |
+| [0018](0018-paridad-local-nube.md) | Entorno local equivalente a la nube como respaldo | Aceptada | Disponibilidad, Testabilidad, Seguridad |
 
 Plantilla: Contexto → Decisión → Alternativas consideradas → Consecuencias (+/−).

@@ -140,6 +140,28 @@ flowchart TB
   L -- sts:AssumeRole --> R --> CE
 ```
 
+**Variante en AWS Academy Learner Lab (ADR-0017).** La cuenta del laboratorio no permite crear roles IAM ni usar
+CloudFront o X-Ray, y admite como máximo 10 ejecuciones concurrentes de Lambda:
+
+```mermaid
+flowchart TB
+  subgraph Lab [AWS Academy Learner Lab · us-east-1]
+    APIGW2[API Gateway HTTP<br/>sirve también el dashboard]
+    L2[Lambda arm64 ×4<br/>rol LabRole · concurrencia reservada 4+3+1+1]
+    Q2[(SQS + DLQ<br/>consumidor máx. 3)]
+    D2[(DynamoDB<br/>celdas en 8 shards)]
+    C2[Cognito]
+    SM2[Secrets Manager]
+    EB2[EventBridge Scheduler<br/>rol LabRole]
+    CW2[CloudWatch / SNS<br/>sin X-Ray]
+  end
+  Browser[Navegador] -- HTTPS --> APIGW2 --> L2
+  L2 --> Q2 --> L2
+  L2 --> D2
+  L2 --> SM2
+  EB2 --> L2
+```
+
 ## 3.5 Vista dinámica — ingesta *push* con duplicado
 
 ```mermaid

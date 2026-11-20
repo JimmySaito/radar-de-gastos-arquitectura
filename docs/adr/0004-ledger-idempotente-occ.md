@@ -1,6 +1,6 @@
 # ADR-0004: Ledger idempotente con deltas y concurrencia optimista
 
-- **Estado:** Aceptada · **Fecha:** 2026-11-16
+- **Estado:** Aceptada · **Fecha:** 2026-11-16 · Evolución del punto de sensibilidad implementada en ADR-0015
 
 ## Contexto
 Hay tres fuentes de duplicación o cambio que, mal tratadas, falsean el gasto reportado:

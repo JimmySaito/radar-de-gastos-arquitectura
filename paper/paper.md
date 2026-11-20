@@ -1,8 +1,7 @@
 ---
 title: "Radar de gastos: arquitectura serverless con un ledger idempotente para consolidar el gasto tecnológico recurrente, del consumo de IA y nube a las suscripciones"
 author:
-  - "[Nombre del autor 1] — [Programa / Universidad]"
-  - "[Nombre del autor 2] — [Programa / Universidad]"
+  - "Jimmy Arturo Mancera Cuesta — Escuela Colombiana de Ingeniería Julio Garavito"
 date: "Noviembre de 2026"
 lang: es
 ---

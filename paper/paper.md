@@ -22,10 +22,11 @@ Amazon DynamoDB: combina claves naturales deterministas, transacciones atómicas
 para garantizar un efecto *exactamente-una-vez* sobre los agregados, aunque la mensajería entregue *al-menos-una-vez*
 y los proveedores revisen sus cifras durante horas. La solución se diseñó con arquitectura hexagonal, CQRS y un
 estilo serverless orientado a eventos en AWS, se documentó con el modelo C4 y ADR, y se alineó con TOGAF, COBIT 2019,
-ISO/IEC 38500 y el FinOps Framework. La evaluación combina 130 pruebas automatizadas (96,3 % de cobertura),
-pruebas basadas en propiedades y pruebas de estrés con inyección de 15 % de mensajes duplicados. En todos los
-escenarios medidos el costo agregado coincidió exactamente con el costo real, y la arquitectura cumplió por
-construcción los once atributos de calidad exigidos.
+ISO/IEC 38500 y el FinOps Framework. La evaluación combina 141 pruebas automatizadas (96,4 % de cobertura),
+pruebas basadas en propiedades, pruebas de estrés con inyección de 15 % de mensajes duplicados y una caída
+controlada del despliegue en AWS. En todos los escenarios medidos el costo agregado coincidió exactamente con el
+costo real; tras la caída los datos quedaron intactos y el servicio se recuperó sin intervención, y la prueba reveló
+cuatro debilidades de observabilidad que se corrigieron.
 
 **Palabras clave:** FinOps, gobierno de TI, gestión de suscripciones, SaaS, arquitectura serverless, idempotencia, CQRS, arquitectura hexagonal, AWS, IA generativa.
 
@@ -452,8 +453,8 @@ permite explorar el panel sin datos propios.
 
 | Indicador | Resultado |
 |---|---|
-| Pruebas automatizadas | 130 (96 unitarias, 2 de propiedades, 15 de integración con AWS emulado, 17 de handlers) |
-| Cobertura (líneas y ramas) | 96,3 % (umbral: 80 %) |
+| Pruebas automatizadas | 141 (96 unitarias, 2 de propiedades, 15 de integración con AWS emulado, 28 de handlers) |
+| Cobertura (líneas y ramas) | 96,4 % (umbral: 80 %) |
 | Tipado estático | `mypy --strict`: 0 errores en 38 módulos |
 | Lint y seguridad estática | `ruff` y `bandit`: 0 hallazgos; `pip-audit`: 0 vulnerabilidades conocidas |
 | Seguridad de la infraestructura | Checkov: 291 controles aprobados, 0 fallidos, 24 excepciones justificadas |
@@ -502,21 +503,42 @@ explícitos (p95 de ingesta < 500 ms, errores < 1 %, DLQ = 0, *backlog* drenado 
 incorporarse al ejecutarlo en la cuenta de AWS del equipo. Este artículo no reporta cifras de la nube que no se
 hayan medido.
 
+**Caída controlada en AWS.** El prototipo se desplegó en AWS Academy Learner Lab, que no permite crear roles IAM
+ni usar CloudFront o X-Ray: las funciones usan el rol del laboratorio y la propia API sirve el dashboard por HTTPS.
+Sobre ese despliegue se terminó la sesión del laboratorio para provocar una caída real y se midió el sistema desde
+fuera (el detalle está en `docs/10-prueba-disponibilidad.md`). Al terminar la sesión, una *service control policy*
+de AWS Organizations niega a las funciones el acceso a DynamoDB y a CloudWatch Logs.
+
+| Medición | Resultado |
+|---|---|
+| Consultas de datos | 500 desde 00:06:17 hasta la recuperación; última correcta a las 00:04:48 |
+| Dashboard, Cognito y autorizador JWT | Disponibles durante toda la caída (mediana de 125 ms frente a 131 ms) |
+| Integridad (antes → después) | 6.313 → 6.313 ítems; 2.807 → 2.807 hechos; cola y DLQ en 0 |
+| Recuperación | Automática: la primera consulta tras reiniciar el laboratorio respondió 200 (411 ms) |
+| Detección | La alarma de errores de la función se disparó en ≈ 1 min; la de tasa de 5xx no |
+| Respaldo | El mismo código, ejecutado en local, sirvió el dashboard durante la caída |
+
+La prueba confirmó las propiedades críticas (integridad y recuperación) y expuso cuatro debilidades que las
+pruebas locales no podían revelar: un chequeo de salud que respondía 200 sin poder leer la base de datos, un error
+500 sin significado para el usuario, un dashboard que mostraba datos de otro rango sin avisarlo, y una alarma de 5xx
+calibrada para tráfico alto. Las cuatro se corrigieron (chequeo `/v1/ready`, respuestas 503 con `Retry-After`, aviso
+de datos desactualizados y alarma de 2 de 5 minutos) y quedaron cubiertas por pruebas automatizadas.
+
 ## 5.3 Evaluación por atributo de calidad
 
 | Atributo | Mecanismo | Evidencia | Estado |
 |---|---|---|---|
 | Confiabilidad | Ledger con deltas, transacciones, OCC | Pruebas de propiedades y de estrés con duplicados | **Verificado** |
-| Disponibilidad | Cola + DLQ, lote parcial, servicios multi-AZ | Prueba de aislamiento de fallas por mensaje | Verificado en pruebas; SLO por medir en AWS |
+| Disponibilidad | Cola + DLQ, lote parcial, servicios multi-AZ, chequeo `/v1/ready`, 503 con `Retry-After` | Aislamiento de fallas por mensaje; caída controlada en AWS (recuperación automática, datos intactos) | Verificado; SLO bajo carga por medir |
 | Desempeño | Asincronía, CQRS, particiones mensuales | Medición local; umbrales k6 definidos | Parcial (pendiente en AWS) |
 | Escalabilidad | Lambda + SQS + DynamoDB *on-demand*, concurrencia acotada | Escenarios *stress*/*spike* definidos | Por diseño; pendiente en AWS |
 | Seguridad | JWT, tenant desde la claim, mínimo privilegio, cifrado con CMK | `test_tenant_isolation`, modelo STRIDE, Checkov sin fallos | **Verificado** |
 | Interoperabilidad | Modelo canónico, OpenAPI 3.1, OAuth 2.0 | Ingesta *push* de extremo a extremo | **Verificado** |
 | Modificabilidad | Hexagonal, Strategy/Registry | Proveedor nuevo = 1 módulo + 1 registro; ampliación del alcance sin modificar el ledger | **Verificado** |
 | Mantenibilidad | Capas, tipado estricto, lint en CI | 0 hallazgos estáticos | **Verificado** |
-| Testabilidad | Puertos + dobles en memoria + moto | 96,3 % de cobertura sin AWS | **Verificado** |
+| Testabilidad | Puertos + dobles en memoria + moto | 96,4 % de cobertura sin AWS | **Verificado** |
 | Reusabilidad | Módulos Terraform y conectores desacoplados | `lambda_function` × 4 | **Verificado** |
-| Soportabilidad | Logs JSON, X-Ray, EMF, runbook, alarmas | Dashboard operativo en IaC | Por diseño |
+| Soportabilidad | Logs JSON, X-Ray, EMF, runbook, alarmas | Caída en AWS: detección en ≈ 1 min y causa identificada en los logs de acceso | Verificado, con mejoras aplicadas |
 
 ## 5.4 Fortalezas
 
@@ -540,8 +562,9 @@ hayan medido.
    (2× WCU), el precio de lecturas rápidas.
 3. **Atribución en OpenAI:** el costo por persona no está disponible en la fuente y debe estimarse.
 4. **Montos antes de créditos e impuestos:** se requiere conciliación con la factura para el cierre contable.
-5. **Validación en la nube pendiente:** las cifras de rendimiento y elasticidad en AWS aún deben medirse con el
-   protocolo provisto.
+5. **Validación en la nube parcial:** la disponibilidad y la recuperación se midieron con una caída controlada en
+   AWS, pero el rendimiento y la elasticidad bajo carga aún deben medirse con el protocolo provisto, y las
+   correcciones derivadas de la caída deben verificarse repitiendo la prueba.
 6. **Aislamiento lógico:** el modelo *pool* de tabla compartida puede no bastar para clientes regulados [26].
 7. **Suscripciones registradas a mano:** a diferencia de las aplicaciones de finanzas personales, el prototipo no
    detecta cobros en cuentas bancarias o correos; su exactitud depende de que el usuario mantenga el registro al día.
@@ -586,7 +609,7 @@ traducen a capacidades verificables: KPIs calculados por el sistema, alertas ide
 una comodidad: es la única forma de ver el total, asignar responsables, anticipar cobros y detectar duplicidades
 entre fuentes.
 
-**Trabajo futuro.** Ejecutar y publicar el protocolo de estrés en AWS; cuantificar la relación entre concurrencia y
+**Trabajo futuro.** Ejecutar y publicar el protocolo de estrés en AWS; repetir la caída controlada durante una recolección para ejercitar los reintentos y la DLQ; cuantificar la relación entre concurrencia y
 conflictos OCC para dimensionar el *sharding* de agregados; incorporar pronóstico y detección de anomalías sobre el
 ledger; evaluar el modelo de aislamiento *silo* frente a *pool* para escenarios regulados; adoptar FOCUS como formato
 de intercambio; y medir con usuarios si la vista consolidada reduce el gasto no deseado.

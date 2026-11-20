@@ -27,6 +27,7 @@ El código del prototipo vive en el repositorio [`radar-de-gastos`](../radar-de-
 | 7 | [Modelo de datos](docs/07-modelo-datos.md) | Modelo canónico y patrones de acceso de DynamoDB |
 | 8 | [Estrategia de pruebas](docs/08-estrategia-pruebas.md) | Pirámide de pruebas, plan de estrés, resultados |
 | 9 | [Riesgos y deuda técnica](docs/09-riesgos-deuda.md) | Riesgos, puntos de sensibilidad y *trade-offs* (ATAM) |
+| 10 | [Prueba de disponibilidad](docs/10-prueba-disponibilidad.md) | Caída controlada en AWS: integridad, recuperación, detección y hallazgos |
 | — | [Artículo](paper/paper.md) | Artículo científico: estado del arte, por qué consolidar, diseño y evaluación |
 
 ## Convenciones

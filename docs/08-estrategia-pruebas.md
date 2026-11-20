@@ -11,7 +11,7 @@
 | Estáticas | ruff, mypy --strict, bandit, checkov, terraform validate | Estilo, tipos, seguridad del código e IaC | CI |
 | Carga / estrés | k6 (AWS), `loadgen.py` (local y AWS) | Rendimiento, elasticidad, consistencia bajo duplicados | 4 escenarios |
 
-Cobertura (líneas y ramas): **96,3 %** con 130 pruebas (umbral de CI: 80 %). Tiempo de la suite: alrededor de 11 s, sin cuenta de AWS.
+Cobertura (líneas y ramas): **96,4 %** con 141 pruebas (umbral de CI: 80 %). Tiempo de la suite: alrededor de 11 s, sin cuenta de AWS.
 
 ## 8.2 Plan de pruebas de estrés
 

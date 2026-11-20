@@ -28,8 +28,8 @@ condición del gobierno y no una comodidad.
 
 ## 1.2 Visión
 
-> Un único punto de verdad, gobernado y extensible, sobre el gasto tecnológico recurrente —consumo de IA y nube,
-> licencias y suscripciones— de una organización y de un hogar. Cada cobro queda atribuido a un responsable y
+> Un único punto de verdad, gobernado y extensible, sobre el gasto tecnológico recurrente (consumo de IA y nube,
+> licencias y suscripciones) de una organización y de un hogar. Cada cobro queda atribuido a un responsable y
 > ninguno llega por sorpresa.
 
 ## 1.3 Evolución del alcance

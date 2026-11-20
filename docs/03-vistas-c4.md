@@ -1,6 +1,6 @@
 # 3. Vistas de arquitectura (modelo C4)
 
-## 3.1 Nivel 1 — Contexto del sistema
+## 3.1 Nivel 1: contexto del sistema
 
 ```mermaid
 flowchart TB
@@ -32,7 +32,7 @@ flowchart TB
   classDef ext fill:#999,color:#fff,stroke:#6b6b6b
 ```
 
-## 3.2 Nivel 2 — Contenedores
+## 3.2 Nivel 2: contenedores
 
 ```mermaid
 flowchart LR
@@ -67,7 +67,7 @@ flowchart LR
 | Ledger | DynamoDB on-demand | Hechos, agregados, configuración | Automática |
 | Identidad | Cognito | Usuarios, grupos, clientes M2M | Administrada |
 
-## 3.3 Nivel 3 — Componentes (código Python)
+## 3.3 Nivel 3: componentes (código Python)
 
 ```mermaid
 flowchart TB
@@ -162,7 +162,7 @@ flowchart TB
   EB2 --> L2
 ```
 
-## 3.5 Vista dinámica — ingesta *push* con duplicado
+## 3.5 Vista dinámica: ingesta *push* con duplicado
 
 ```mermaid
 sequenceDiagram
@@ -195,7 +195,7 @@ sequenceDiagram
   Note over Q,C: Si el mensaje se entrega de nuevo, todos los registros salen UNCHANGED.
 ```
 
-## 3.6 Vista dinámica — recolección *pull* horaria
+## 3.6 Vista dinámica: recolección *pull* horaria
 
 ```mermaid
 sequenceDiagram

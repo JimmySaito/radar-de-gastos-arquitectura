@@ -59,10 +59,10 @@ con 6 decimales; `tenant_id` cumple `^[a-z0-9][a-z0-9-]{1,62}$`.
 |---|---|---|---|---|
 | `service` | `group.model` | `model` / `line_item` | `SERVICE` | `service.description` |
 | `principal` | `actor` → `user:…`, `service_account:…`, `api_key:…` | `user:…` / `api_key:…` / `project:…` | `tag:<owner>` / `untagged` | `labels.owner` / `project:…` |
-| `input_tokens` | `uncached_input_tokens` + escritura de caché | `input_tokens` − `input_cached_tokens` | — | — |
-| `cached_tokens` | `cache_read_input_tokens` | `input_cached_tokens` | — | — |
-| `output_tokens` | `output_tokens` | `output_tokens` | — | — |
-| `requests` | `requests` | `num_model_requests` | — | — |
+| `input_tokens` | `uncached_input_tokens` + escritura de caché | `input_tokens` − `input_cached_tokens` | No aplica | No aplica |
+| `cached_tokens` | `cache_read_input_tokens` | `input_cached_tokens` | No aplica | No aplica |
+| `output_tokens` | `output_tokens` | `output_tokens` | No aplica | No aplica |
+| `requests` | `requests` | `num_model_requests` | No aplica | No aplica |
 | `cost` | `cost.amount` / 100 (centavos) | `amount.value` | `UnblendedCost.Amount` | `cost + créditos` |
 
 ## 7.3 Diseño de tabla única (DynamoDB)
@@ -74,7 +74,7 @@ con 6 decimales; `tenant_id` cumple `^[a-z0-9][a-z0-9-]{1,62}$`.
 | Mapeo | `T#{tenant}#MAP` | `{provider}#{principal}` | `member`, `team` |
 | Conector | `CFG#CONNECTOR` | `{tenant}#{connector_id}` | `config` (sin secretos) |
 | Presupuesto | `T#{tenant}#BUDGET` | `{team}#{provider|*}` | `budget` |
-| Alerta enviada | `T#{tenant}#ALERT` | `{yyyy-mm}#{team}#{provider}#{umbral}` | — (marcador idempotente) |
+| Alerta enviada | `T#{tenant}#ALERT` | `{yyyy-mm}#{team}#{provider}#{umbral}` | No aplica (marcador idempotente) |
 | Gasto recurrente | `O#{dueño}#RECUR` (dueño = `user:{sub}` o `tenant:{id}`) | `{expense_id}` | servicio, categoría, monto, moneda, ciclo, fecha de cobro, usuarios, personas (`member_ids`) |
 | Persona (personal) | `O#user:{sub}#PEOPLE` | `{profile_id}` | nombre, relación |
 
@@ -86,7 +86,7 @@ con 6 decimales; `tenant_id` cumple `^[a-z0-9][a-z0-9-]{1,62}$`.
 | AP2 | Upsert de un hecho con deltas | `TransactWriteItems` (1 Put + ≤ 3 Update; ≤ 5 con reatribución) | 2 WCU × ítem |
 | AP3 | Agregados por dimensión y rango | `Query PK=T#t#A#dim#mes, SK BETWEEN` (1 por mes) | O(celdas) |
 | AP4 | Conectores de todos los tenants (scheduler) | `Query PK=CFG#CONNECTOR` | 1 query paginada |
-| AP5 | Conectores de un tenant | `Query … begins_with(SK, tenant#)` | — |
+| AP5 | Conectores de un tenant | `Query … begins_with(SK, tenant#)` | No aplica |
 | AP6 | Mapeo de un principal | `GetItem` | 1 RCU |
 | AP7 | Marcar alerta una sola vez | `PutItem` condicional | 1 WCU |
 

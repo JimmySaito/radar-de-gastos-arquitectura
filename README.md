@@ -1,4 +1,4 @@
-# Radar de gastos — Repositorio de arquitectura
+# Radar de gastos: repositorio de arquitectura
 
 Artefactos de **Arquitectura de Software**, **Arquitectura Empresarial** y **Gobierno de TI** de
 Radar de gastos, una plataforma que consolida el gasto tecnológico recurrente en dos espacios:
@@ -28,7 +28,7 @@ El código del prototipo vive en el repositorio [`radar-de-gastos`](../radar-de-
 | 8 | [Estrategia de pruebas](docs/08-estrategia-pruebas.md) | Pirámide de pruebas, plan de estrés, resultados |
 | 9 | [Riesgos y deuda técnica](docs/09-riesgos-deuda.md) | Riesgos, puntos de sensibilidad y *trade-offs* (ATAM) |
 | 10 | [Prueba de disponibilidad](docs/10-prueba-disponibilidad.md) | Caída controlada en AWS: integridad, recuperación, detección y hallazgos |
-| — | [Artículo](paper/paper.md) | Artículo científico: estado del arte, por qué consolidar, diseño y evaluación |
+|  | [Artículo](paper/paper.md) ([PDF](paper/radar-de-gastos-articulo.pdf), [Word](paper/radar-de-gastos-articulo.docx)) | Artículo científico: estado del arte, por qué consolidar, diseño y evaluación. El PDF y el Word se regeneran con `python paper/exportar.py` |
 
 ## Convenciones
 

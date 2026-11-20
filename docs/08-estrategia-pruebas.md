@@ -26,7 +26,7 @@ Cobertura (líneas y ramas): **96,4 %** con 163 pruebas (umbral de CI: 80 %). Ti
 Métricas observadas: latencia (p50/p95/p99) de API Gateway, `ConcurrentExecutions` y `Throttles` del colector,
 `ApproximateAgeOfOldestMessage`, `LedgerRetry*` (conflictos OCC), `QueueToLedgerLatency`, consumo de WCU y DLQ.
 
-## 8.3 Resultados medidos — entorno local
+## 8.3 Resultados medidos en el entorno local
 
 **Entorno:** Windows 11, Python 3.13, servidor local de un solo proceso (`scripts/local_server.py`) que ejecuta
 **el mismo handler** de Lambda con repositorio en memoria. Generador: `scripts/loadgen.py`, modo mixto

@@ -37,7 +37,7 @@ mindmap
 
 Cada escenario indica las **tácticas** aplicadas y la **evidencia** en el código.
 
-### QAS-R1 — Confiabilidad: exactitud ante entrega duplicada y datos revisados
+### QAS-R1. Confiabilidad: exactitud ante entrega duplicada y datos revisados
 | Parte | Valor |
 |---|---|
 | Fuente | SQS (entrega al-menos-una-vez), proveedores que revisan datos, clientes que reintentan |
@@ -51,7 +51,7 @@ Cada escenario indica las **tácticas** aplicadas y la **evidencia** en el códi
 optimista (ADR-0004). **Evidencia:** `domain/ledger.py`, `adapters/dynamodb.py`, prueba de propiedades
 `test_aggregates_converge_to_latest_version` y verificación de consistencia de `scripts/loadgen.py`.
 
-### QAS-P1 — Desempeño: ingesta *push*
+### QAS-P1. Desempeño: ingesta *push*
 | Parte | Valor |
 |---|---|
 | Fuente | Sistema externo autenticado (M2M) |
@@ -64,7 +64,7 @@ optimista (ADR-0004). **Evidencia:** `domain/ledger.py`, `adapters/dynamodb.py`,
 **Tácticas:** procesamiento asíncrono (cola), validación temprana, Lambda con 1024 MB (más CPU).
 **Evidencia:** `handlers/api.py::ingest_records`, umbrales en `tests/load/k6_ingest.js`.
 
-### QAS-P2 — Desempeño: consulta del dashboard
+### QAS-P2. Desempeño: consulta del dashboard
 | Parte | Valor |
 |---|---|
 | Fuente | Usuario del dashboard |
@@ -77,7 +77,7 @@ optimista (ADR-0004). **Evidencia:** `domain/ledger.py`, `adapters/dynamodb.py`,
 **Tácticas:** CQRS con agregados precalculados, particionamiento mensual (≤ 4 particiones por cada 90 días).
 **Evidencia:** `services/dashboard.py`, `adapters/keys.py`.
 
-### QAS-S1 — Escalabilidad / elasticidad
+### QAS-S1. Escalabilidad / elasticidad
 | Parte | Valor |
 |---|---|
 | Fuente | Ráfaga de ingesta (cierre de mes, *backfill*) |
@@ -91,7 +91,7 @@ optimista (ADR-0004). **Evidencia:** `domain/ledger.py`, `adapters/dynamodb.py`,
 *on-demand*, concurrencia máxima del consumidor para proteger el almacenamiento.
 **Evidencia:** `infra/terraform/envs/dev/main.tf` (`scaling_config`), escenario `spike` de k6.
 
-### QAS-A1 — Disponibilidad
+### QAS-A1. Disponibilidad
 | Parte | Valor |
 |---|---|
 | Fuente | Falla de un proveedor externo (5xx, 429, credencial vencida) o de una AZ |
@@ -104,7 +104,7 @@ optimista (ADR-0004). **Evidencia:** `domain/ledger.py`, `adapters/dynamodb.py`,
 **Tácticas:** reintento con *backoff*, *bulkhead* por mensaje, DLQ, servicios regionales multi-AZ administrados.
 **Evidencia:** `handlers/collector.py`, `test_collector_reports_partial_failures`, `modules/sqs_queue`.
 
-### QAS-SE1 — Seguridad: aislamiento multi-tenant
+### QAS-SE1. Seguridad: aislamiento multi-tenant
 | Parte | Valor |
 |---|---|
 | Fuente | Usuario autenticado malicioso |
@@ -117,12 +117,12 @@ optimista (ADR-0004). **Evidencia:** `domain/ledger.py`, `adapters/dynamodb.py`,
 **Tácticas:** tenant derivado del JWT, `extra="forbid"`, claves con prefijo `T#{tenant}`.
 **Evidencia:** `handlers/api.py::current_caller`, `test_tenant_isolation`.
 
-### QAS-SE2 — Seguridad: custodia de credenciales
+### QAS-SE2. Seguridad: custodia de credenciales
 Las llaves Admin viven en Secrets Manager (KMS). IAM limita el acceso a `secret:radar-gastos/*` solo para el
 colector, y AWS se lee mediante AssumeRole con ExternalId. **Medida:** 0 secretos en código, variables de
 entorno o logs (gitleaks en pre-commit).
 
-### QAS-I1 — Interoperabilidad
+### QAS-I1. Interoperabilidad
 | Parte | Valor |
 |---|---|
 | Fuente | Un sistema no soportado (LLM interno, SaaS, herramienta propia) |
@@ -133,7 +133,7 @@ entorno o logs (gitleaks en pre-commit).
 
 **Evidencia:** `docs/openapi.yaml`, modelo canónico `UsageRecord`.
 
-### QAS-M1 — Modificabilidad
+### QAS-M1. Modificabilidad
 | Parte | Valor |
 |---|---|
 | Fuente | Desarrollador |
@@ -145,20 +145,20 @@ entorno o logs (gitleaks en pre-commit).
 
 **Tácticas:** puertos y adaptadores, Strategy + Registry, modelo canónico (ADR-0002).
 
-### QAS-MA1 — Mantenibilidad
+### QAS-MA1. Mantenibilidad
 `ruff` (más de 15 familias de reglas, incluido bandit) y `mypy --strict` se ejecutan en CI y bloquean el *merge*.
 El tamaño de los módulos está acotado y el núcleo de dominio no depende de AWS. **Medida:** 0 errores estáticos.
 
-### QAS-T1 — Testabilidad
+### QAS-T1. Testabilidad
 Los puertos permiten probar el dominio con adaptadores en memoria y la infraestructura con moto.
 **Medida:** cobertura ≥ 80 % (lograda: 96,4 %), suite completa en menos de 30 s y sin cuenta de AWS.
 
-### QAS-RU1 — Reusabilidad
+### QAS-RU1. Reusabilidad
 Hay módulos Terraform genéricos (`lambda_function`, `sqs_queue`, `static_site`, `cost_reader_role`) y
 conectores independientes de la plataforma. **Medida:** cada módulo se instancia 1..N veces sin modificarlo
 (`lambda_function` se instancia 4 veces).
 
-### QAS-SU1 — Soportabilidad
+### QAS-SU1. Soportabilidad
 | Parte | Valor |
 |---|---|
 | Fuente | Operador on-call |
